@@ -2,7 +2,9 @@
     <?php if ( get_theme_mod('tr199x_show_badges', true) ) : ?>
       <div class="tr-badges">
         <img src="<?php echo esc_url( get_template_directory_uri().'/assets/badges/btn-under-construction.gif'); ?>" alt="Under Construction">
-        <img src="<?php echo esc_url( get_template_directory_uri().'/assets/badges/btn-guestbook.gif'); ?>" alt="Sign Guestbook">
+        <a href="<?php echo esc_url( home_url('/guestbook/') ); ?>">
+          <img src="<?php echo esc_url( get_template_directory_uri().'/assets/badges/btn-guestbook.gif'); ?>" alt="Sign Guestbook">
+        </a>
         <img src="<?php echo esc_url( get_template_directory_uri().'/assets/badges/btn-netscape.gif'); ?>" alt="Netscape Now">
       </div>
     <?php endif; ?>
