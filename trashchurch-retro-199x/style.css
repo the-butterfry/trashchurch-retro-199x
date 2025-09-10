@@ -678,3 +678,8 @@ body:not(.page-template-page-teamup-calendar) .tr-teamup.tr-pipe-frame {
   padding-left: 22px;
   border-left: 4px solid var(--tr-border);
 }
+/* Footer spacing fix: ensure gap between main content and footer */
+.tr-footer {
+  margin-top: clamp(24px, 4vw, 48px);
+  padding-top: 18px;
+}
