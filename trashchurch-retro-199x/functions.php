@@ -436,3 +436,5 @@ add_action('wp_footer','tr199x_midi_embed');
 
 /* Include Hit Counter System */
 require_once get_template_directory() . '/inc/hit-counter.php';
+// Teamup Calendar integration
+require_once get_template_directory() . '/inc/teamup-calendar.php';
