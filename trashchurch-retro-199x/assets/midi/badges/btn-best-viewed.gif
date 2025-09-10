@@ -1,0 +1,173 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN">
+<HTML>
+<HEAD>
+   <TITLE>Peter H. S. Madsens Verden</TITLE>
+   <META NAME="Author" CONTENT="Peter H. S. Madsen">
+   <META NAME="Classification" CONTENT="Software,Freeware,Gratis software,Grafik,Animationer,ReaAudio,Lyd,Musik,JavaScripts,Personlig Hjemmeside">
+   <META NAME="Description" CONTENT="Personlig Hjemmeside, der tilbyder download af gratis programmer. Læs 'Gode råd om CONFIG.SYS & AUTOEXEC.BAT'. Samling med mere end 1000 Animerede GIF-billeder. RealAudio JukeBox. JavaScripts">
+   <META NAME="KeyWords" CONTENT="Peter Madsen,AUTOBASE,personkartotek,AUTOTIME,sommertid,vintertid,codepage,config.sys,autoexec.bat,animerede GIF-billeder,animeret,RealAudio,lyd,musik,JavaScript">
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META HTTP-EQUIV="Content-Script-Type" CONTENT="text/javascript">
+   <META HTTP-EQUIV="Content-Language" CONTENT="da">
+   <META HTTP-EQUIV="Window-target" CONTENT="_top">
+   <LINK REL="SHORTCUT ICON" HREF="favicon.ico">
+   <LINK REL="APPLE-TOUCH-ICON" HREF="/favicon.png">
+   <LINK REL="STYLESHEET" TYPE="text/css" HREF="standard.css">
+
+<!--
+   <link rel="icon" href="https://s.pinimg.com/webapp/style/images/favicon-54a5b2af.png">
+   <link rel="apple-touch-icon" href="https://s.pinimg.com/webapp/style/images/logo_trans_144x144-5e37c0c6.png">
+   <link rel="mask-icon" sizes="any" href="https://s.pinimg.com/webapp/style/images/pinterest_badge-d9ac575a.svg" color="#e60023">
+-->
+
+
+<STYLE TYPE="text/css">
+<!-- A { text-decoration: none } -->
+</STYLE>
+
+<SCRIPT LANGUAGE="JavaScript" TYPE="text/javascript">
+<!--
+if (self != top) top.location.href = self.location.href;
+
+popup = true;
+
+playsound = document.cookie.length != 0 && document.cookie.indexOf("Sound=Yes") != -1;
+// playsound = !(document.cookie.length != 0 && document.cookie.indexOf("Sound=No") != -1);
+
+mplayer = "";
+
+clockStart = new Date();
+clockStart = clockStart.getTime();
+
+function insertSound(file, nr)
+{
+  if (nr == null)
+    nr =  "1";
+  if (navigator.appName == "Netscape" &&  navigator.userAgent.indexOf("Opera") < 0)
+    txt = '<EMBED TYPE="audio/x-wav" SRC="' + file + '" HIDDEN=true AUTOSTART=true VOLUME=85 ALIGN=RIGHT LOOP=' + nr + '>';
+  else
+    txt = '<BGSOUND SRC="' + file + '" LOOP=' + nr + '>';
+  return txt;
+}
+// -->
+</SCRIPT>
+
+<SCRIPT LANGUAGE="JavaScript" TYPE="text/javascript">
+<!--
+
+/* Copyright © Peter H. S. Madsen
+   URL: http://madsenworld.dk
+   Brug af dette script er tilladt på betingelse af,
+   at denne kommentar ikke fjernes */
+
+function makeArray()
+{
+  arg = makeArray.arguments;
+  for (var i = 0; i < arg.length; i++)
+    this[i] = arg[i];
+}
+
+days = new makeArray("Søndag", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag");
+months = new makeArray("januar", "februar", "marts", "april", "maj", "juni", "juli", "august", "september", "oktober", "november", "december");
+
+
+function showTime()
+{
+  time = new Date();
+
+  day = days[time.getDay()];
+  month = months[time.getMonth()];
+  date = time.getDate();
+  year = (time.getYear() < 1000) ? 1900 + time.getYear() : time.getYear();
+  year = (year < 1970) ? year + 100 : year;
+  hours = time.getHours();
+  minutes = time.getMinutes();
+  minutes = (minutes < 10) ? "0" + minutes : minutes;
+  seconds = time.getSeconds();
+  seconds = (seconds < 10) ? "0" + seconds : seconds;
+
+  document.title = text + " - " + day + "\u00A0 d. " + date + ". " + month + "\u00A0 " + year + ",\u00A0 kl. " + hours + "." + minutes + "." + seconds + counter;
+  setTimeout("showTime()", 1000);
+}
+
+// showTime();
+// -->
+</SCRIPT>
+
+</HEAD>
+
+<SCRIPT LANGUAGE="JavaScript" TYPE="text/javascript">
+<!--
+page = (self.location.search) ? self.location.search.substring(1) + self.location.hash : "main-dk.htm";
+
+document.writeln('<FRAMESET ROWS="85, *, 85" BORDER=0 FRAMESPACING=0 FRAMEBORDER=0 onLoad="window.defaultStatus = main.document.title">');
+document.writeln('<FRAMESET COLS="95, *, 70" BORDER=0 FRAMESPACING=0 FRAMEBORDER=0>');
+document.writeln('<FRAME SRC="top1.htm" NAME="top1" MARGINHEIGHT=15 MARGINWIDTH=15 FRAMEBORDER=0 NORESIZE SCROLLING="no">');
+document.writeln('<FRAME SRC="panel-dk.htm" NAME="top2" MARGINHEIGHT=16 MARGINWIDTH=1 FRAMEBORDER=0 NORESIZE SCROLLING="no">');
+document.writeln('<FRAME SRC="top3.htm" NAME="top3" MARGINHEIGHT=47 MARGINWIDTH=54 FRAMEBORDER=0 NORESIZE SCROLLING="no">');
+document.writeln('<\/FRAMESET>');
+document.writeln('<FRAMESET COLS="75, *" BORDER=0 FRAMESPACING=0 FRAMEBORDER=0>');
+document.writeln('<FRAME SRC="side.htm" NAME="side" MARGINHEIGHT=1 MARGINWIDTH=8 FRAMEBORDER=0 NORESIZE SCROLLING="no">');
+document.writeln('<FRAME SRC="' + page + '" NAME="main" MARGINHEIGHT=1 MARGINWIDTH=15 FRAMEBORDER=0>');
+document.writeln('<\/FRAMESET>');
+document.writeln('<FRAMESET COLS="95, 210, *" BORDER=0 FRAMESPACING=0 FRAMEBORDER=0>');
+document.writeln('<FRAME SRC="bottom1.htm" NAME="bottom1" MARGINHEIGHT=27 MARGINWIDTH=13 FRAMEBORDER=0 NORESIZE SCROLLING="no">');
+document.writeln('<FRAME SRC="music/stop-dk.htm" NAME="bottom2" MARGINHEIGHT=28 MARGINWIDTH=1 FRAMEBORDER=0 NORESIZE SCROLLING="no">');
+document.writeln('<FRAME SRC="music/panel-dk.htm" NAME="bottom3" MARGINHEIGHT=43 MARGINWIDTH=15 FRAMEBORDER=0 NORESIZE SCROLLING="no">');
+document.writeln('<\/FRAMESET>');
+document.writeln('<NOFRAMES>');
+document.writeln('<BODY TEXT="#000000" BGCOLOR="#99CCFF" LINK="#0000FF" VLINK="#FF0000" ALINK="#FFFF00" BACKGROUND="baggrund.gif">');
+document.writeln('<CENTER><TABLE CELLPADDING=20>');
+document.writeln('<TR><TD><A HREF="main-dk.htm"><IMG SRC="round-dk.gif" ALT="DA" BORDER=0 HEIGHT=44 WIDTH=45><\/A><\/TD>');
+document.writeln('<TD><B>Din Browser understøtter ikke Frames.<BR>Du kan vælge at <A HREF="main-dk.htm">se siderne uden Frames<\/A>.<\/B><\/TD><\/TR>');
+document.writeln('<TR><TD><A HREF="main-uk.htm"><IMG SRC="round-uk.gif" ALT="EN" BORDER=0 HEIGHT=44 WIDTH=45><\/A><\/TD>');
+document.writeln('<TD><B>Your Browser doesn\'t support Frames.<BR>You can choose to <A HREF="main-uk.htm">view the pages without Frames<\/A>.<\/B><\/TD><\/TR>');
+document.writeln('<\/TABLE><\/CENTER><HR SIZE=3><\/BODY>');
+document.writeln('<\/NOFRAMES>');
+document.writeln('<\/FRAMESET>');
+// -->
+</SCRIPT>
+
+<NOSCRIPT>
+<FRAMESET ROWS="85, *, 85" BORDER=0 FRAMESPACING=0 FRAMEBORDER=0>
+  <FRAMESET COLS="95, *, 70" BORDER=0 FRAMESPACING=0 FRAMEBORDER=0>
+    <FRAME SRC="top1.htm" NAME="top1" MARGINHEIGHT=15 MARGINWIDTH=15 FRAMEBORDER=0 NORESIZE SCROLLING="no">
+    <FRAME SRC="panel-dk.htm" NAME="top2" MARGINHEIGHT=16 MARGINWIDTH=1 FRAMEBORDER=0 NORESIZE SCROLLING="no">
+    <FRAME SRC="top3.htm" NAME="top3" MARGINHEIGHT=47 MARGINWIDTH=54 FRAMEBORDER=0 NORESIZE SCROLLING="no">
+  </FRAMESET>
+  <FRAMESET COLS="75, *" BORDER=0 FRAMESPACING=0 FRAMEBORDER=0>
+    <FRAME SRC="side.htm" NAME="side" MARGINHEIGHT=1 MARGINWIDTH=10 FRAMEBORDER=0 NORESIZE SCROLLING="no">
+    <FRAME SRC="main-dk.htm" NAME="main" MARGINHEIGHT=1 MARGINWIDTH=15 FRAMEBORDER=0>
+  </FRAMESET>
+  <FRAMESET COLS="95, 210, *" BORDER=0 FRAMESPACING=0 FRAMEBORDER=0>
+    <FRAME SRC="bottom1.htm" NAME="bottom1" MARGINHEIGHT=27 MARGINWIDTH=13 FRAMEBORDER=0 NORESIZE SCROLLING="no">
+    <FRAME SRC="music/stop-dk.htm" NAME="bottom2" MARGINHEIGHT=28 MARGINWIDTH=1 FRAMEBORDER=0 NORESIZE SCROLLING="no">
+    <FRAME SRC="music/panel-dk.htm" NAME="bottom3" MARGINHEIGHT=43 MARGINWIDTH=15 FRAMEBORDER=0 NORESIZE SCROLLING="no">
+  </FRAMESET>
+  <NOFRAMES>
+  <BODY TEXT="#000000" BGCOLOR="#99CCFF" LINK="#0000FF" VLINK="#FF0000" ALINK="#FFFF00" BACKGROUND="baggrund.gif">
+
+  <CENTER><TABLE CELLPADDING=20>
+  <TR>
+  <TD><A HREF="main-dk.htm"><IMG SRC="round-dk.gif" ALT="DA" BORDER=0 HEIGHT=44 WIDTH=45></A></TD>
+
+  <TD><B>Din Browser understøtter ikke Frames.<BR>
+  Du kan vælge at <A HREF="main-dk.htm">se siderne uden Frames</A>.</B></TD>
+  </TR>
+
+  <TR>
+  <TD><A HREF="main-uk.htm"><IMG SRC="round-uk.gif" ALT="EN" BORDER=0 HEIGHT=44 WIDTH=45></A></TD>
+
+  <TD><B>Your Browser doesn't support Frames.<BR>
+  You can choose to <A HREF="main-uk.htm">view the pages without Frames</A>.</B></TD>
+  </TR>
+  </TABLE></CENTER>
+
+  <HR SIZE=3>
+
+  </BODY>
+  </NOFRAMES>
+</FRAMESET>
+</NOSCRIPT>
+
+</HTML>
