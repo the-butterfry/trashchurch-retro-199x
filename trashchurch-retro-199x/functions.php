@@ -438,3 +438,8 @@ add_action('wp_footer','tr199x_midi_embed');
 require_once get_template_directory() . '/inc/hit-counter.php';
 // Teamup Calendar integration
 require_once get_template_directory() . '/inc/teamup-calendar.php';
+
+function tr_enqueue_teamup_styles() {
+  wp_enqueue_style( 'tr-teamup', get_template_directory_uri() . '/assets/css/teamup.css', array(), '1.0' );
+}
+add_action( 'wp_enqueue_scripts', 'tr_enqueue_teamup_styles' );

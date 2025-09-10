@@ -1,40 +1,46 @@
-/* Teamup calendar frame and header gap for page-teamup-calender.php */
+/* Teamup calendar styles for the full-width calendar template */
 
-/* Target the specific page template to avoid affecting other pages.
-   The template filename is page-teamup-calender.php so WP will add
-   body.page-template-page-teamup-calender. Adjust if your body class differs. */
-body.page-template-page-teamup-calender .retro-container {
-  /* creates the visible gap between the header and the top of the page content */
+/* Full-width calendar spacing (unique class added in page-teamup-calendar.php) */
+.teamup-fullwidth.retro-container {
   margin-top: var(--tcr199x-section-gap, 1.25rem);
 }
 
-/* Retro piping frame used site-wide for similar framed sections */
+/* Retro piping frame used site-wide for framed sections
+   — box-shadow removed and max-width cleared so the frame is flat and can
+   expand fully inside the full-width template. */
 .tr-pipe-frame {
   background: var(--tcr199x-surface, #fff);
   padding: clamp(12px, 2.5vw, 18px);
   border: 3px solid var(--tcr199x-border, #222);
-  box-shadow:
-    0 0 0 2px #fff inset,
-    0 0 0 5px var(--tcr199x-border, #222) inset;
+  /* removed previous inset shadows */
+  box-shadow: none;
   border-radius: 2px;
   background-clip: padding-box;
   margin: calc(var(--tcr199x-section-gap, 1.25rem) / 2) auto;
-  max-width: min(100%, 980px);
+  /* allow it to expand instead of capping to 980px */
+  max-width: none;
   box-sizing: border-box;
 }
 
-/* Ensure the shortcode/embed fills the frame */
-.tr-teamup .teamup-calendar,
+/* Ensure the calendar embed fills the frame */
 .tr-teamup iframe,
-body.page-template-page-teamup-calender .tr-teamup > * {
+.tr-teamup .teamup-calendar,
+.tr-teamup > * {
   width: 100%;
   box-sizing: border-box;
+  display: block;
 }
 
 .tr-teamup iframe {
-  display: block;
-  width: 100%;
   height: min(80vh, 900px);
   border: 0;
   background: #fff;
+  display: block;
+}
+
+/* Keep the defensive reset for the full-width template (if other rules leak in) */
+.teamup-fullwidth .tr-teamup.tr-pipe-frame {
+  padding-left: 0 !important;
+  border-left: 0 !important;
+  box-shadow: none !important;
 }
