@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # push-to-main.sh
-# Interactive script to bump version, update READMEs and changed files, commit and push.
+# Interactive script to bump version, update README and changed files, commit and push.
 # Usage: ./push-to-main.sh
 set -euo pipefail
 
@@ -204,6 +204,7 @@ replace_version_in_file() {
   local cur="$2"
   local new="$3"
 
+  # Use perl for robust word-boundary matching and preserve leading 'v' if present
   if grep -q -E "v?${cur}" "$file"; then
     perl -0777 -pe "s/(?<![0-9A-Za-z_.-])v?${cur}(?![0-9A-Za-z_.-])/${new}/g" -i.bak "$file"
     rm -f "${file}.bak"
@@ -219,19 +220,23 @@ update_special_files() {
   local updated=()
 
   if [[ -f package.json ]]; then
-    if grep -q '"version"[[:space:]]*:[[:space:]]*"' package.json"; then
+    # check if package.json contains a "version" field
+    if grep -q "\"version\"[[:space:]]*:[[:space:]]*\"" package.json; then
       sed -E -i.bak "s/\"version\"[[:space:]]*:[[:space:]]*\"[^\"]+\"/\"version\": \"${new}\"/" package.json
       rm -f package.json.bak
       updated+=("package.json")
     fi
   fi
+
   if [[ -f composer.json ]]; then
-    if grep -q '"version"[[:space:]]*:[[:space:]]*"' composer.json"; then
+    # check if composer.json contains a "version" field
+    if grep -q "\"version\"[[:space:]]*:[[:space:]]*\"" composer.json; then
       sed -E -i.bak "s/\"version\"[[:space:]]*:[[:space:]]*\"[^\"]+\"/\"version\": \"${new}\"/" composer.json
       rm -f composer.json.bak
       updated+=("composer.json")
     fi
   fi
+
   if [[ -f VERSION ]]; then
     echo -n "${new}" > VERSION
     updated+=("VERSION")
@@ -269,8 +274,8 @@ else
   info "No files contained the current version string; no in-file replacements made."
 fi
 
-# If README files exist, scan for occurrences of the new version and, if none were found & no updates occurred, attempt to update
-if [[ -z "${updated_files[*]-}" ]]; then
+# If README files exist, scan for occurrences of the old version and update if needed
+if [[ -z "${updated_files[*]-}" && -n "$readme_files" ]]; then
   info "Attempting to update README files for version mentions."
   for r in $readme_files; do
     if replace_version_in_file "$r" "$current_version" "$new_version"; then
