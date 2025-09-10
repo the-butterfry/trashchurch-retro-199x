@@ -1,0 +1,40 @@
+/* Teamup calendar frame and header gap for page-teamup-calender.php */
+
+/* Target the specific page template to avoid affecting other pages.
+   The template filename is page-teamup-calender.php so WP will add
+   body.page-template-page-teamup-calender. Adjust if your body class differs. */
+body.page-template-page-teamup-calender .retro-container {
+  /* creates the visible gap between the header and the top of the page content */
+  margin-top: var(--tcr199x-section-gap, 1.25rem);
+}
+
+/* Retro piping frame used site-wide for similar framed sections */
+.tr-pipe-frame {
+  background: var(--tcr199x-surface, #fff);
+  padding: clamp(12px, 2.5vw, 18px);
+  border: 3px solid var(--tcr199x-border, #222);
+  box-shadow:
+    0 0 0 2px #fff inset,
+    0 0 0 5px var(--tcr199x-border, #222) inset;
+  border-radius: 2px;
+  background-clip: padding-box;
+  margin: calc(var(--tcr199x-section-gap, 1.25rem) / 2) auto;
+  max-width: min(100%, 980px);
+  box-sizing: border-box;
+}
+
+/* Ensure the shortcode/embed fills the frame */
+.tr-teamup .teamup-calendar,
+.tr-teamup iframe,
+body.page-template-page-teamup-calender .tr-teamup > * {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tr-teamup iframe {
+  display: block;
+  width: 100%;
+  height: min(80vh, 900px);
+  border: 0;
+  background: #fff;
+}
