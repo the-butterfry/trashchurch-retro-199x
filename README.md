@@ -6,7 +6,7 @@ This repo contains the theme in `trashchurch-retro-199x/` and a GitHub Action th
 
 ## Quick Start
 
-1. Download the latest Release ZIP (auto-built when you publish a release).
+1. Download the latest Release ZIP.
 2. Upload the ZIP to WordPress: Appearance → Themes → Add New → Upload Theme.
 3. Activate the theme and open Appearance → Customize → Retro 199X Options.
 
