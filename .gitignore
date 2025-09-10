@@ -1,0 +1,25 @@
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editors/IDE
+.vscode/
+.idea/
+
+# Dependencies / builds
+node_modules/
+vendor/
+dist/
+build/
+release/
+
+# Logs
+*.log
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+
+# WordPress misc (if present)
+wp-*.php

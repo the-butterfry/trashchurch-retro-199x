@@ -1,0 +1,22 @@
+name: build-theme-zip
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create ZIP from theme folder
+        run: |
+          zip -r "trashchurch-retro-199x-${{ github.event.release.tag_name }}.zip" trashchurch-retro-199x
+
+      - name: Upload ZIP to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            trashchurch-retro-199x-${{ github.event.release.tag_name }}.zip
