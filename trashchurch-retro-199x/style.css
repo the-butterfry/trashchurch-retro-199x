@@ -679,3 +679,81 @@ table.retro-table td {
   opacity: 0.95;
   margin-bottom: 0.5rem;
 }
+/* --- Append: Teamup calendar styles (page-teamup-calendar.php) --- */
+
+/* Target the template body class (both correct and the misspelled variant) */
+body.page-template-page-teamup-calendar .retro-container .page-content,
+body.page-template-page-teamup-calender .retro-container .page-content {
+  /* keep the same top/bottom gap as tr-panel for visual consistency */
+  padding-top: 30px;
+  padding-bottom: 40px;
+  box-sizing: border-box;
+}
+
+/* Calendar wrapper: keep same centering / max-width as the theme */
+body.page-template-page-teamup-calendar .tr-teamup,
+body.page-template-page-teamup-calender .tr-teamup {
+  max-width: var(--tr-max);
+  margin: 0 auto;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Piping: left visual pipe that matches theme border color/width */
+body.page-template-page-teamup-calendar .tr-teamup.tr-pipe-frame,
+body.page-template-page-teamup-calender .tr-teamup.tr-pipe-frame {
+  padding-left: 22px;           /* space between pipe and calendar content */
+  border-left: 4px solid var(--tr-border);
+  /* keep alignment consistent with other framed content */
+}
+
+/* If you prefer the pipe to be rendered as a subtle rounded bar (alternative),
+   add the class .pipe-before to the wrapper element and use this rule instead. */
+body.page-template-page-teamup-calendar .tr-teamup.pipe-before,
+body.page-template-page-teamup-calender .tr-teamup.pipe-before {
+  position: relative;
+  padding-left: 36px;
+}
+body.page-template-page-teamup-calendar .tr-teamup.pipe-before::before,
+body.page-template-page-teamup-calender .tr-teamup.pipe-before::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
+  background: var(--tr-border);
+  border-radius: 2px;
+}
+
+/* Responsive Teamup iframe / embed sizing (adjust heights as needed) */
+body.page-template-page-teamup-calendar .tr-teamup iframe,
+body.page-template-page-teamup-calender .tr-teamup iframe,
+body.page-template-page-teamup-calendar .tr-teamup .teamup-embed,
+body.page-template-page-teamup-calender .tr-teamup .teamup-embed {
+  display: block;
+  width: 100%;
+  height: 800px; /* desktop default; change if you want taller/shorter */
+  border: 0;
+}
+
+/* Tighter heights on smaller viewports */
+@media (max-width: 880px) {
+  body.page-template-page-teamup-calendar .tr-teamup iframe,
+  body.page-template-page-teamup-calender .tr-teamup iframe,
+  body.page-template-page-teamup-calendar .tr-teamup .teamup-embed,
+  body.page-template-page-teamup-calender .tr-teamup .teamup-embed {
+    height: 600px;
+  }
+}
+@media (max-width: 600px) {
+  body.page-template-page-teamup-calendar .tr-teamup iframe,
+  body.page-template-page-teamup-calender .tr-teamup iframe,
+  body.page-template-page-teamup-calendar .tr-teamup .teamup-embed,
+  body.page-template-page-teamup-calender .tr-teamup .teamup-embed {
+    height: 420px;
+    padding-left: 12px; /* reduce left padding so small screens don't feel cramped */
+  }
+}
+
+/* End appended Teamup styles */
