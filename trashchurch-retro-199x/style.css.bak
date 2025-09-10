@@ -3,7 +3,7 @@ Theme Name: TrashChurch Retro 199X
 Theme URI: https://example.com/trashchurch-retro-199x
 Author: the-butterfry
 Author URI: https://github.com/the-butterfry
-Description: Maximalist late 1990s geocities/angelfire style with marquee, comet cursor, tiled GIFs, MIDI (optional), retro hit counter (global + per-post), digit GIF sprites. Fully responsive + accessibility-ready,
+Description: Maximalist late 1990s geocities/angelfire style with marquee, comet cursor, tiled GIFs, MIDI (optional), retro hit counter (global + per-post), digit GIF sprites. Fully responsive + accessibility toggles.
 Version: 0.2.3
 License: GPL-2.0-or-later
 Text Domain: trashchurch-retro-199x
@@ -380,7 +380,12 @@ body.no-marquee .tr-marquee { display:none; }
 }
 
 /* Footer */
-/* keep a generic badges container (some themes place badges outside footer) */
+.tr-footer {
+  background: var(--tr-gradient) !important;
+  border: 4px ridge var(--tr-border) !important;
+  border-radius: var(--tr-radius) !important;
+  box-shadow: 0 0 25px var(--tr-border-alt) , inset 0 0 25px #000 !important;
+}
 .tr-badges {
   display:flex;
   flex-wrap:wrap;
@@ -388,102 +393,12 @@ body.no-marquee .tr-marquee { display:none; }
   justify-content:center;
   margin: 10px 0 18px;
 }
-
-/* Footer: safe grid layout (integrated)
-   Purpose:
-   - Copyright remains left
-   - Badges (GIFs) sit right on the first row
-   - "Site Hits" appears on a second row, right-aligned
-   Replaces earlier .tr-footer definitions to avoid conflicts.
-*/
-.tr-footer {
-  background: var(--tr-gradient) !important;
-  border: 4px ridge var(--tr-border);
-  border-radius: var(--tr-radius);
-  box-shadow: 0 0 16px #000 inset;
-  padding: 18px 24px;
-  margin-top: clamp(20px, 4vw, 40px);
-  color: var(--tr-accent-2);
-  font-family: var(--tr-mono);
-
-  /* layout */
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto;
-  grid-template-areas:
-    "copyright badges"
-    ".        hits";
-  gap: 8px 12px;
-  align-items: center;
-}
-
-/* left cell: copyright */
-.tr-footer p {
-  grid-area: copyright;
-  margin: 0;
-  text-align: left;
-  font-size: 0.95rem;
-  color: inherit;
-  font-family: inherit;
-}
-
-/* badges (GIFs) on the first row, right aligned */
-.tr-footer .tr-badges {
-  grid-area: badges;
-  display: flex;
-  gap: 8px;
-  justify-self: end;
-  align-items: center;
-}
-
-/* Site Hits forced onto its own row and right-aligned */
-.tr-footer .tr-hit-counter,
-.tr-footer .tr-post-hit-counter,
-.tr-footer #global-hit-count {
-  grid-area: hits;
-  display: flex;
-  gap: 8px;
-  justify-self: end;
-  align-items: center;
-  margin-top: 4px;
-  color: inherit;
-  font-family: inherit;
-}
-
-/* keep badge visuals consistent */
-.tr-footer .tr-badges img {
-  height: 31px;
-  image-rendering: pixelated;
-  border: 2px solid var(--tr-border-alt);
-  background: #0;
-  box-shadow: 0 0 6px var(--tr-border-alt);
-}
-
-/* footer hit label styling (keeps visual consistent) */
-.tr-hit-label {
-  margin: 0;
-  padding: 4px 8px;
-  background: #140040;
-  border: 2px solid var(--tr-border-alt);
-  border-radius: 8px;
-  font-weight: 700;
-  color: var(--tr-accent);
-  box-shadow: 0 0 8px var(--tr-border-alt), inset 0 0 8px #000;
-}
-
-/* Responsive: stack + center on narrow screens */
-@media (max-width: 880px) {
-  .tr-footer {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "copyright"
-      "badges"
-      "hits";
-    text-align: center;
-  }
-  .tr-footer .tr-badges { justify-self: center; }
-  .tr-footer .tr-hit-counter,
-  .tr-footer #global-hit-count { justify-self: center; }
+.tr-badges img {
+  height:31px;
+  image-rendering:pixelated;
+  border:2px solid var(--tr-border-alt);
+  background:#000;
+  box-shadow:0 0 6px var(--tr-border-alt);
 }
 
 /* Guestbook */
@@ -695,6 +610,16 @@ table.retro-table td {
   gap: 8px;
   flex-wrap: wrap;
 }
+.tr-hit-label {
+  background:#140040;
+  border:2px solid var(--tr-border-alt);
+  padding:4px 8px;
+  border-radius: 8px;
+  font-weight:700;
+  color: var(--tr-accent);
+  box-shadow:0 0 8px var(--tr-border-alt), inset 0 0 8px #000;
+  letter-spacing:1px;
+}
 .tr-hit-digits {
   display:flex;
   align-items:flex-end;
@@ -753,5 +678,8 @@ body:not(.page-template-page-teamup-calendar) .tr-teamup.tr-pipe-frame {
   padding-left: 22px;
   border-left: 4px solid var(--tr-border);
 }
-
-/* End of file */
+/* Footer spacing fix: ensure gap between main content and footer */
+.tr-footer {
+  margin-top: clamp(20px, 4vw, 40px);
+  padding-top: 10px;
+}
