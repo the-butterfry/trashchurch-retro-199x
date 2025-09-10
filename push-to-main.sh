@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # push-to-main.sh
 # Interactive script to bump version, update README and changed files, commit and push.
-# Usage: ./push-to-main.sh
+# Adds handling for non-fast-forward push rejections (offers rebase/push or force-with-lease).
 set -euo pipefail
 
 # Helpers
@@ -314,22 +314,98 @@ if prompt_yes_no "Create an annotated git tag for ${new_version}? (y/N)" "N"; th
   info "Created tag ${tag_prefix}${new_version}"
 fi
 
+# Function to push with handling for non-fast-forward rejects
+handle_push_to_main() {
+  # Try normal push first
+  if git push origin "HEAD:main"; then
+    info "Pushed HEAD to origin/main"
+    return 0
+  fi
+
+  echo
+  echo "Push was rejected (non-fast-forward). Your local branch is behind origin/main."
+  echo "Choose how to proceed:"
+  echo "  1) Fetch and rebase origin/main onto your HEAD, then push (recommended)"
+  echo "  2) Merge origin/main into local HEAD, resolve conflicts, then push"
+  echo "  3) Force push with lease (overwrite remote if safe)"
+  echo "  4) Push to origin/<current-branch> instead"
+  echo "  5) Abort"
+  read -rp "Choice [1]: " push_choice
+  push_choice="${push_choice:-1}"
+  case "$push_choice" in
+    1)
+      echo "Fetching and rebasing origin/main..."
+      git fetch origin main
+      if git rebase origin/main; then
+        echo "Rebase successful. Retrying push..."
+        git push origin "HEAD:main"
+        return $?
+      else
+        echo "Rebase failed. Resolve conflicts, run 'git rebase --continue' or 'git rebase --abort'."
+        return 1
+      fi
+      ;;
+    2)
+      echo "Merging origin/main into current branch..."
+      git fetch origin main
+      if git merge origin/main; then
+        echo "Merge successful. Retrying push..."
+        git push origin "HEAD:main"
+        return $?
+      else
+        echo "Merge had conflicts. Resolve them and commit, then push."
+        return 1
+      fi
+      ;;
+    3)
+      if prompt_yes_no "Force-push with lease (git push --force-with-lease origin HEAD:main)? This may overwrite remote changes. Proceed? (y/N)" "N"; then
+        git push --force-with-lease origin "HEAD:main"
+        return $?
+      else
+        echo "Not forced. Aborting push step."
+        return 1
+      fi
+      ;;
+    4)
+      current_branch=$(git rev-parse --abbrev-ref HEAD)
+      if prompt_yes_no "Push to origin/${current_branch} instead? (y/N)" "Y"; then
+        git push origin "$current_branch"
+        return $?
+      else
+        echo "Not pushing to branch. Aborting push step."
+        return 1
+      fi
+      ;;
+    5)
+      echo "Aborting push step."
+      return 1
+      ;;
+    *)
+      echo "Invalid choice. Aborting."
+      return 1
+      ;;
+  esac
+}
+
 # Push
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 echo "You are on branch: $current_branch"
 if prompt_yes_no "Push to origin/main (will push HEAD to main)? (y/N)" "N"; then
-  git push origin "HEAD:main"
-  info "Pushed HEAD to origin/main"
-  if git tag --list | grep -q "${new_version}" || git tag --list | grep -q "v${new_version}"; then
-    git push origin --tags
-    info "Pushed tags"
+  if handle_push_to_main; then
+    # push tags if any
+    if git tag --list | grep -q -E "^(v)?${new_version}$"; then
+      git push origin --tags || true
+      info "Pushed tags"
+    fi
+  else
+    info "Push to origin/main was not completed."
   fi
 else
   if prompt_yes_no "Push to origin/$current_branch instead? (y/N)" "N"; then
     git push origin "$current_branch"
     info "Pushed origin/$current_branch"
-    if git tag --list | grep -q "${new_version}" || git tag --list | grep -q "v${new_version}"; then
-      git push origin --tags
+    if git tag --list | grep -q -E "^(v)?${new_version}$"; then
+      git push origin --tags || true
       info "Pushed tags"
     fi
   else
