@@ -1,9 +1,7 @@
   <footer class="tr-footer">
     <?php if ( get_theme_mod('tr199x_show_badges', true) ) : ?>
       <div class="tr-badges">
-        <img src="<?php echo esc_url( get_template_directory_uri().'/assets/badges/btn-valid-html.gif'); ?>" alt="Valid HTML?">
         <img src="<?php echo esc_url( get_template_directory_uri().'/assets/badges/btn-under-construction.gif'); ?>" alt="Under Construction">
-        <img src="<?php echo esc_url( get_template_directory_uri().'/assets/badges/btn-best-viewed.gif'); ?>" alt="Best Viewed 1024x768">
         <img src="<?php echo esc_url( get_template_directory_uri().'/assets/badges/btn-guestbook.gif'); ?>" alt="Sign Guestbook">
         <img src="<?php echo esc_url( get_template_directory_uri().'/assets/badges/btn-netscape.gif'); ?>" alt="Netscape Now">
       </div>

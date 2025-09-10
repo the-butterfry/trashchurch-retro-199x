@@ -680,6 +680,6 @@ body:not(.page-template-page-teamup-calendar) .tr-teamup.tr-pipe-frame {
 }
 /* Footer spacing fix: ensure gap between main content and footer */
 .tr-footer {
-  margin-top: clamp(24px, 4vw, 48px);
-  padding-top: 18px;
+  margin-top: clamp(20px, 4vw, 40px);
+  padding-top: 10px;
 }
