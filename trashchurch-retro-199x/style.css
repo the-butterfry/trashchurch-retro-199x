@@ -653,3 +653,29 @@ table.retro-table td {
   color: var(--tr-accent-2);
   margin-top:10px;
 }
+/* === Header UI cleanup: center site title/tagline, remove Comic Sans for them only === */
+.tr-title,
+.tr-title a,
+.tr-tagline {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif !important;
+}
+
+.tr-title {
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  line-height: 1.1;
+  margin: 0.2rem 0 0.25rem;
+}
+
+.tr-title a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.tr-tagline {
+  text-align: center;
+  font-weight: 400;
+  opacity: 0.95;
+  margin-bottom: 0.5rem;
+}

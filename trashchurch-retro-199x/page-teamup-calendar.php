@@ -14,9 +14,14 @@ get_header(); ?>
       the_post();
       the_content();
     endwhile;
-
-    echo do_shortcode( '[retro_calendar]' );
     ?>
+    <!-- Calendar framed to match site piping and given a gap under the header.
+         The body class for this page template will be:
+         body.page-template-page-teamup-calender
+         Target that class in your stylesheet if you want to change the spacing. -->
+    <div class="tr-teamup tr-pipe-frame">
+      <?php echo do_shortcode( '[retro_calendar]' ); ?>
+    </div>
   </div>
 </main>
 <?php get_footer(); ?>
