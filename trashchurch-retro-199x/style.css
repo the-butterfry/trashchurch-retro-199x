@@ -4,7 +4,7 @@ Theme URI: https://example.com/trashchurch-retro-199x
 Author: the-butterfry
 Author URI: https://github.com/the-butterfry
 Description: Maximalist late 1990s geocities/angelfire style with marquee, comet cursor, tiled GIFs, MIDI (optional), retro hit counter (global + per-post), digit GIF sprites. Fully responsive + accessibility toggles.
-Version: 0.2.1
+Version: 0.2.3
 License: GPL-2.0-or-later
 Text Domain: trashchurch-retro-199x
 Tags: blog, retro, custom-background, custom-logo, responsive-layout, accessibility-ready, nostalgia
@@ -381,16 +381,10 @@ body.no-marquee .tr-marquee { display:none; }
 
 /* Footer */
 .tr-footer {
-  margin-top:90px;
-  background:#060018;
-  border-top:4px solid var(--tr-border);
-  padding:50px 10px 110px;
-  text-align:center;
-  font-family: var(--tr-mono);
-  font-size:13px;
-  color: var(--tr-accent-2);
-  position:relative;
-  box-shadow:0 -2px 25px #000;
+  background: var(--tr-gradient) !important;
+  border: 4px ridge var(--tr-border) !important;
+  border-radius: var(--tr-radius) !important;
+  box-shadow: 0 0 25px var(--tr-border-alt) , inset 0 0 25px #000 !important;
 }
 .tr-badges {
   display:flex;
