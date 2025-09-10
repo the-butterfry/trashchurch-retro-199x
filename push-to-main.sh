@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # push-to-main.sh
 # Interactive script to bump version, update README and changed files, commit and push.
-# Adds handling for non-fast-forward push rejections (offers rebase/push or force-with-lease).
+# On push rejection it will automatically fetch+rebase origin/main and retry the push.
 set -euo pipefail
 
 # Helpers
@@ -314,91 +314,58 @@ if prompt_yes_no "Create an annotated git tag for ${new_version}? (y/N)" "N"; th
   info "Created tag ${tag_prefix}${new_version}"
 fi
 
-# Function to push with handling for non-fast-forward rejects
-handle_push_to_main() {
-  # Try normal push first
-  if git push origin "HEAD:main"; then
-    info "Pushed HEAD to origin/main"
-    return 0
+# Function: automatically fetch+rebase origin/main and retry push on rejection
+auto_rebase_and_push_main() {
+  info "Attempting automatic fetch + rebase of origin/main onto current branch..."
+  # fetch origin main (best effort)
+  git fetch origin main || true
+
+  # ensure origin/main exists
+  if ! git rev-parse --verify --quiet origin/main >/dev/null; then
+    info "origin/main not found; cannot rebase. Aborting automatic rebase."
+    return 1
   fi
 
-  echo
-  echo "Push was rejected (non-fast-forward). Your local branch is behind origin/main."
-  echo "Choose how to proceed:"
-  echo "  1) Fetch and rebase origin/main onto your HEAD, then push (recommended)"
-  echo "  2) Merge origin/main into local HEAD, resolve conflicts, then push"
-  echo "  3) Force push with lease (overwrite remote if safe)"
-  echo "  4) Push to origin/<current-branch> instead"
-  echo "  5) Abort"
-  read -rp "Choice [1]: " push_choice
-  push_choice="${push_choice:-1}"
-  case "$push_choice" in
-    1)
-      echo "Fetching and rebasing origin/main..."
-      git fetch origin main
-      if git rebase origin/main; then
-        echo "Rebase successful. Retrying push..."
-        git push origin "HEAD:main"
-        return $?
-      else
-        echo "Rebase failed. Resolve conflicts, run 'git rebase --continue' or 'git rebase --abort'."
-        return 1
-      fi
-      ;;
-    2)
-      echo "Merging origin/main into current branch..."
-      git fetch origin main
-      if git merge origin/main; then
-        echo "Merge successful. Retrying push..."
-        git push origin "HEAD:main"
-        return $?
-      else
-        echo "Merge had conflicts. Resolve them and commit, then push."
-        return 1
-      fi
-      ;;
-    3)
-      if prompt_yes_no "Force-push with lease (git push --force-with-lease origin HEAD:main)? This may overwrite remote changes. Proceed? (y/N)" "N"; then
-        git push --force-with-lease origin "HEAD:main"
-        return $?
-      else
-        echo "Not forced. Aborting push step."
-        return 1
-      fi
-      ;;
-    4)
-      current_branch=$(git rev-parse --abbrev-ref HEAD)
-      if prompt_yes_no "Push to origin/${current_branch} instead? (y/N)" "Y"; then
-        git push origin "$current_branch"
-        return $?
-      else
-        echo "Not pushing to branch. Aborting push step."
-        return 1
-      fi
-      ;;
-    5)
-      echo "Aborting push step."
+  # attempt rebase local commits on top of origin/main
+  if git rebase origin/main; then
+    info "Rebase successful; retrying push to origin/main..."
+    if git push origin "HEAD:main"; then
+      info "Push successful after rebase."
+      return 0
+    else
+      info "Push still failed after rebase."
       return 1
-      ;;
-    *)
-      echo "Invalid choice. Aborting."
-      return 1
-      ;;
-  esac
+    fi
+  else
+    echo "Rebase failed. You must resolve conflicts manually."
+    echo "To abort rebase and restore previous state run: git rebase --abort"
+    return 1
+  fi
 }
 
 # Push
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 echo "You are on branch: $current_branch"
 if prompt_yes_no "Push to origin/main (will push HEAD to main)? (y/N)" "N"; then
-  if handle_push_to_main; then
+  # Try normal push first
+  if git push origin "HEAD:main"; then
+    info "Pushed HEAD to origin/main"
     # push tags if any
     if git tag --list | grep -q -E "^(v)?${new_version}$"; then
       git push origin --tags || true
       info "Pushed tags"
     fi
   else
-    info "Push to origin/main was not completed."
+    info "Push was rejected (non-fast-forward). Will automatically attempt fetch+rebase and retry."
+    if auto_rebase_and_push_main; then
+      # push tags if any
+      if git tag --list | grep -q -E "^(v)?${new_version}$"; then
+        git push origin --tags || true
+        info "Pushed tags"
+      fi
+    else
+      err "Automatic rebase/push failed. Resolve the issue manually (rebase conflicts or remote state) and retry."
+    fi
   fi
 else
   if prompt_yes_no "Push to origin/$current_branch instead? (y/N)" "N"; then
