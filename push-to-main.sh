@@ -1,158 +1,335 @@
 #!/usr/bin/env bash
-# Generic helper to stage/commit local changes and push them to origin/main.
-# Usage:
-#   ./push-to-main.sh                # interactive (asks before pushing)
-#   ./push-to-main.sh -m "msg" -y    # use msg and auto-confirm
-#   ./push-to-main.sh -m "msg" -f    # force push (use with caution)
-#
-# Notes:
-# - Safe by default: tries fast-forward first, then rebase. If either step
-#   encounters conflicts you'll need to resolve them manually.
-# - If origin/main is branch-protected, the push will be rejected. Create a PR instead.
-
+# push-to-main.sh
+# Interactive script to bump version, update READMEs and changed files, commit and push.
+# Usage: ./push-to-main.sh
 set -euo pipefail
-
-REMOTE="origin"
-TARGET_BRANCH="main"
-AUTO_YES=0
-FORCE_PUSH=0
-COMMIT_MSG=""
-DRY_RUN=0
-
-usage() {
-  cat <<EOF
-Usage: $0 [-m "commit message"] [-y] [-f] [--dry-run]
-  -m "msg"   : Commit message to use (default: timestamped message)
-  -y         : Auto confirm push (don't prompt)
-  -f         : Force push (git push -f)
-  --dry-run  : Print actions but don't actually push
-EOF
-  exit 1
-}
-
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    -m) shift; COMMIT_MSG="$1"; shift ;;
-    -y) AUTO_YES=1; shift ;;
-    -f) FORCE_PUSH=1; shift ;;
-    --dry-run) DRY_RUN=1; shift ;;
-    -h|--help) usage ;;
-    *) echo "Unknown arg: $1"; usage ;;
-  esac
-done
 
 # Helpers
 err() { echo "ERROR: $*" >&2; exit 1; }
-info() { echo "=> $*"; }
-
-# Ensure we're inside a git repo
-git rev-parse --is-inside-work-tree >/dev/null 2>&1 || err "Not inside a git repository."
-
-# Remember original branch
-ORIG_BRANCH="$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD)"
-info "Current branch: $ORIG_BRANCH"
-
-# Stage everything (including new/untracked files)
-info "Staging all changes..."
-git add -A
-
-# Prepare commit message
-if [[ -z "$COMMIT_MSG" ]]; then
-  COMMIT_MSG="Save local changes: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-fi
-
-# Commit if there are staged changes
-if git diff --cached --quiet; then
-  info "No staged changes to commit."
-else
-  info "Committing: $COMMIT_MSG"
-  git commit -m "$COMMIT_MSG"
-fi
-
-# Fetch remote
-info "Fetching $REMOTE..."
-git fetch "$REMOTE"
-
-# Ensure we have local TARGET_BRANCH; if not, try to create from remote
-if git show-ref --verify --quiet "refs/heads/$TARGET_BRANCH"; then
-  :
-else
-  if git ls-remote --exit-code --heads "$REMOTE" "$TARGET_BRANCH" >/dev/null 2>&1; then
-    info "Creating local $TARGET_BRANCH from $REMOTE/$TARGET_BRANCH"
-    git checkout -b "$TARGET_BRANCH" "$REMOTE/$TARGET_BRANCH"
-  else
-    info "Creating new local $TARGET_BRANCH (no remote branch exists)"
-    git checkout -b "$TARGET_BRANCH"
-  fi
-fi
-
-# Checkout target branch
-info "Checking out $TARGET_BRANCH..."
-git checkout "$TARGET_BRANCH"
-
-# Attempt to update local main: prefer fast-forward, then rebase
-info "Updating $TARGET_BRANCH from $REMOTE/$TARGET_BRANCH..."
-set +e
-git pull --ff-only "$REMOTE" "$TARGET_BRANCH"
-FF_OK=$?
-if [[ $FF_OK -ne 0 ]]; then
-  info "Fast-forward failed; trying pull --rebase..."
-  git pull --rebase "$REMOTE" "$TARGET_BRANCH"
-  REBASE_OK=$?
-  if [[ $REBASE_OK -ne 0 ]]; then
-    err "Unable to update $TARGET_BRANCH automatically (rebase failed). Resolve manually and re-run."
-  fi
-fi
-set -e
-
-# If we started on a different branch, merge those commits into main
-if [[ "$ORIG_BRANCH" != "$TARGET_BRANCH" ]]; then
-  # If ORIG_BRANCH is an orphan/detached head, skip automatic merge
-  if git rev-parse --verify "$ORIG_BRANCH" >/dev/null 2>&1; then
-    info "Merging commits from $ORIG_BRANCH into $TARGET_BRANCH..."
-    set +e
-    git merge --no-ff --no-edit "$ORIG_BRANCH"
-    MERGE_OK=$?
-    if [[ $MERGE_OK -ne 0 ]]; then
-      err "Merge conflict while merging $ORIG_BRANCH into $TARGET_BRANCH. Resolve conflicts and then run 'git push $REMOTE $TARGET_BRANCH'."
-    fi
-    set -e
-  else
-    info "Original branch '$ORIG_BRANCH' not available for merge (detached or unknown); skipping merge."
-  fi
-else
-  info "Already on $TARGET_BRANCH; no branch merge needed."
-fi
-
-# Prompt before pushing
-echo
-info "About to push to $REMOTE/$TARGET_BRANCH"
-if [[ $FORCE_PUSH -eq 1 ]]; then
-  info "Force push enabled!"
-fi
-
-if [[ $DRY_RUN -eq 1 ]]; then
-  info "[DRY RUN] Skipping actual push."
-  echo "Run without --dry-run to perform the push."
-  exit 0
-fi
-
-if [[ $AUTO_YES -ne 1 ]]; then
-  read -r -p "Proceed with git push to $REMOTE/$TARGET_BRANCH? [y/N] " REPLY
-  case "$REPLY" in
-    [Yy]|[Yy][Ee][Ss]) ;;
-    *) info "Aborted by user."; exit 0 ;;
+info() { echo "INFO: $*"; }
+prompt_yes_no() {
+  local prompt="$1"
+  local default="${2:-N}"
+  local resp
+  read -rp "$prompt " resp
+  resp="${resp:-$default}"
+  case "${resp,,}" in
+    y|yes) return 0 ;;
+    *) return 1 ;;
   esac
+}
+
+# Ensure we're in a git repo
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  err "This script must be run from inside a git repository."
+fi
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT"
+
+# Detect uncommitted/untracked changes
+git_status_porcelain=$(git status --porcelain)
+if [[ -n "$git_status_porcelain" ]]; then
+  echo "There are uncommitted changes in the working tree:"
+  echo
+  git status --short
+  echo
+
+  if prompt_yes_no "Would you like to commit these changes now? (y/N)" "N"; then
+    if prompt_yes_no "Stage all changes (git add -A) and commit them now? (y/N)" "Y"; then
+      git add -A
+      read -rp "Enter commit message for local changes (default: 'chore: save local changes before release'): " local_commit_msg
+      local_commit_msg=${local_commit_msg:-"chore: save local changes before release"}
+      # Only commit if there is something staged
+      if git diff --cached --quiet; then
+        info "Nothing staged after git add -A (no changes to commit)."
+      else
+        git commit -m "$local_commit_msg"
+        info "Committed local changes."
+      fi
+    else
+      echo "You chose not to stage all changes automatically."
+      if prompt_yes_no "Continue without committing? (y/N)" "N"; then
+        info "Continuing without committing. Be aware uncommitted changes will remain."
+      else
+        err "Please commit or stash changes and re-run."
+      fi
+    fi
+  else
+    if prompt_yes_no "Continue without committing? (y/N)" "N"; then
+      info "Continuing without committing. Be aware uncommitted changes will remain."
+    else
+      err "Please commit or stash changes and re-run."
+    fi
+  fi
+fi
+
+# Try to determine current version
+get_version_from_package_json() {
+  if [[ -f package.json ]]; then
+    ver=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' package.json || true)
+    [[ -n "$ver" ]] && echo "$ver" && return 0
+  fi
+  return 1
+}
+get_version_from_composer() {
+  if [[ -f composer.json ]]; then
+    ver=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' composer.json || true)
+    [[ -n "$ver" ]] && echo "$ver" && return 0
+  fi
+  return 1
+}
+get_version_from_VERSION_file() {
+  if [[ -f VERSION ]]; then
+    tr -d ' \t\n\r' < VERSION || true
+  fi
+}
+get_version_from_tags() {
+  if git rev-parse --verify --quiet refs/tags >/dev/null; then
+    latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
+    if [[ -n "$latest_tag" ]]; then
+      echo "${latest_tag#v}"
+      return 0
+    fi
+  fi
+  return 1
+}
+
+current_version=""
+current_version=$(get_version_from_tags || true)
+if [[ -z "$current_version" ]]; then
+  current_version=$(get_version_from_package_json || true)
+fi
+if [[ -z "$current_version" ]]; then
+  current_version=$(get_version_from_composer || true)
+fi
+if [[ -z "$current_version" ]]; then
+  current_version=$(get_version_from_VERSION_file || true)
+fi
+
+if [[ -z "$current_version" ]]; then
+  echo "Could not auto-detect a current version (no tags, no package.json/composer.json/VERSION)."
+  read -rp "Enter current version to use as base (example 0.1.0). Leave blank to start from 0.0.0: " manual_ver
+  if [[ -z "$manual_ver" ]]; then
+    current_version="0.0.0"
+  else
+    current_version="$manual_ver"
+  fi
+fi
+
+info "Current version detected: $current_version"
+
+# Ask how to bump
+echo "Select how you want to increment the version:"
+echo "  1) patch  (x.y.(z+1))"
+echo "  2) minor  (x.(y+1).0)"
+echo "  3) major  ((x+1).0.0)"
+echo "  4) prerelease (append -rc.1, -beta.1 or custom suffix)"
+echo "  5) custom  (enter explicit version)"
+read -rp "Choice [1]: " choice
+choice="${choice:-1}"
+
+# parse semver components (best-effort)
+IFS='.' read -r major minor patch <<< "$(echo "$current_version" | sed -E 's/^v?([0-9]+)\.([0-9]+)\.([0-9]+).*$/\1.\2.\3/')" || true
+major=${major:-0}; minor=${minor:-0}; patch=${patch:-0}
+
+new_version=""
+case "$choice" in
+  1)
+    patch=$((patch + 1))
+    new_version="${major}.${minor}.${patch}"
+    ;;
+  2)
+    minor=$((minor + 1))
+    patch=0
+    new_version="${major}.${minor}.${patch}"
+    ;;
+  3)
+    major=$((major + 1))
+    minor=0; patch=0
+    new_version="${major}.${minor}.${patch}"
+    ;;
+  4)
+    read -rp "Enter prerelease suffix (example rc.1 or beta.1) or leave blank to use rc.1: " suffix
+    suffix="${suffix:-rc.1}"
+    base="${major}.${minor}.${patch}"
+    new_version="${base}-${suffix}"
+    ;;
+  5)
+    read -rp "Enter the exact version you want (example 1.2.3): " custom
+    if [[ -z "$custom" ]]; then
+      err "No version provided."
+    fi
+    new_version="$custom"
+    ;;
+  *)
+    err "Invalid choice."
+    ;;
+esac
+
+echo "Proposed new version: $new_version"
+read -rp "Proceed with this version? (y/N) " confirm
+if [[ "${confirm,,}" != "y" ]]; then
+  err "Aborted by user."
+fi
+
+# Find changed files relative to origin/main (if available) or relative to main branch
+changed_files=""
+git fetch origin main --quiet 2>/dev/null || true
+if git rev-parse --verify --quiet origin/main >/dev/null; then
+  changed_files=$(git diff --name-only origin/main...HEAD)
+else
+  if git rev-parse --verify --quiet main >/dev/null; then
+    changed_files=$(git diff --name-only main...HEAD)
+  else
+    changed_files=$(git status --porcelain | awk '{print $2}' | tr '\n' ' ')
+  fi
+fi
+
+# Always include README files in the scan
+readme_files=$(git ls-files 'README*' 2>/dev/null || true)
+# Compose files to scan uniquely
+files_to_scan=$(printf "%s\n%s\n" "$changed_files" "$readme_files" | sed '/^\s*$/d' | sort -u)
+
+if [[ -z "$files_to_scan" ]]; then
+  info "No changed files found and no README files present. Nothing to update for version strings."
+else
+  info "Files to scan for version strings:"
+  echo "$files_to_scan" | sed 's/^/  - /'
+fi
+
+# Function to replace version in file (attempt safe in-place edit)
+replace_version_in_file() {
+  local file="$1"
+  local cur="$2"
+  local new="$3"
+
+  if grep -q -E "v?${cur}" "$file"; then
+    perl -0777 -pe "s/(?<![0-9A-Za-z_.-])v?${cur}(?![0-9A-Za-z_.-])/${new}/g" -i.bak "$file"
+    rm -f "${file}.bak"
+    return 0
+  fi
+  return 1
+}
+
+# Also update package.json/composer.json/VERSION explicitly if present
+update_special_files() {
+  local cur="$1"
+  local new="$2"
+  local updated=()
+
+  if [[ -f package.json ]]; then
+    if grep -q '"version"[[:space:]]*:[[:space:]]*"' package.json"; then
+      sed -E -i.bak "s/\"version\"[[:space:]]*:[[:space:]]*\"[^\"]+\"/\"version\": \"${new}\"/" package.json
+      rm -f package.json.bak
+      updated+=("package.json")
+    fi
+  fi
+  if [[ -f composer.json ]]; then
+    if grep -q '"version"[[:space:]]*:[[:space:]]*"' composer.json"; then
+      sed -E -i.bak "s/\"version\"[[:space:]]*:[[:space:]]*\"[^\"]+\"/\"version\": \"${new}\"/" composer.json
+      rm -f composer.json.bak
+      updated+=("composer.json")
+    fi
+  fi
+  if [[ -f VERSION ]]; then
+    echo -n "${new}" > VERSION
+    updated+=("VERSION")
+  fi
+
+  if (( ${#updated[@]} )); then
+    printf "%s\n" "${updated[@]}"
+  fi
+}
+
+# Update files
+updated_files=()
+if [[ -n "$files_to_scan" ]]; then
+  while IFS= read -r f; do
+    [[ -z "$f" ]] && continue
+    [[ -d "$f" ]] && continue
+    if replace_version_in_file "$f" "$current_version" "$new_version"; then
+      updated_files+=("$f")
+    fi
+  done <<< "$files_to_scan"
+fi
+
+# Update package.json/composer.json/VERSION if present even if not changed files
+while IFS= read -r f; do
+  [[ -z "$f" ]] && continue
+  updated_files+=("$f")
+done < <(update_special_files "$current_version" "$new_version" || true)
+
+# Deduplicate updated_files
+if (( ${#updated_files[@]} )); then
+  mapfile -t updated_files < <(printf "%s\n" "${updated_files[@]}" | sort -u)
+  info "The following files were updated with new version:"
+  for u in "${updated_files[@]}"; do echo "  - $u"; done
+else
+  info "No files contained the current version string; no in-file replacements made."
+fi
+
+# If README files exist, scan for occurrences of the new version and, if none were found & no updates occurred, attempt to update
+if [[ -z "${updated_files[*]-}" ]]; then
+  info "Attempting to update README files for version mentions."
+  for r in $readme_files; do
+    if replace_version_in_file "$r" "$current_version" "$new_version"; then
+      updated_files+=("$r")
+    fi
+  done
+fi
+
+# Stage changes
+if (( ${#updated_files[@]} )); then
+  git add "${updated_files[@]}"
+  info "Staged version updates."
+else
+  info "No file updates to stage."
+fi
+
+# Commit
+read -rp "Enter commit message for the version bump (default: \"chore(release): bump version to $new_version\"): " commit_msg
+commit_msg=${commit_msg:-"chore(release): bump version to ${new_version}"}
+
+if git diff --cached --quiet; then
+  info "Nothing staged to commit."
+else
+  git commit -m "$commit_msg"
+  info "Committed: $commit_msg"
+fi
+
+# Optionally create annotated tag
+if prompt_yes_no "Create an annotated git tag for ${new_version}? (y/N)" "N"; then
+  tag_prefix=""
+  latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
+  if [[ "$latest_tag" =~ ^v[0-9] ]]; then
+    tag_prefix="v"
+  fi
+  git tag -a "${tag_prefix}${new_version}" -m "Release ${new_version}"
+  info "Created tag ${tag_prefix}${new_version}"
 fi
 
 # Push
-if [[ $FORCE_PUSH -eq 1 ]]; then
-  git push --force "$REMOTE" "$TARGET_BRANCH"
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+echo "You are on branch: $current_branch"
+if prompt_yes_no "Push to origin/main (will push HEAD to main)? (y/N)" "N"; then
+  git push origin "HEAD:main"
+  info "Pushed HEAD to origin/main"
+  if git tag --list | grep -q "${new_version}" || git tag --list | grep -q "v${new_version}"; then
+    git push origin --tags
+    info "Pushed tags"
+  fi
 else
-  git push "$REMOTE" "$TARGET_BRANCH"
+  if prompt_yes_no "Push to origin/$current_branch instead? (y/N)" "N"; then
+    git push origin "$current_branch"
+    info "Pushed origin/$current_branch"
+    if git tag --list | grep -q "${new_version}" || git tag --list | grep -q "v${new_version}"; then
+      git push origin --tags
+      info "Pushed tags"
+    fi
+  else
+    info "Skipping push. Local repo updated and committed. Remember to push when ready."
+  fi
 fi
 
-info "Push complete. Latest commit on $TARGET_BRANCH:"
-git --no-pager log -1 --pretty=format:'%h %s (%an) %ad' --date=local
-
-# End
+info "Done. New version: $new_version"
