@@ -1,39 +1,51 @@
-<!DOCTYPE html>
+<?php
+/**
+ * The header for our theme
+ *
+ * (excerpt) - this file now puts Menu text into a screen-reader-only <span>
+ */
+?><!doctype html>
 <html <?php language_attributes(); ?>>
 <head>
-<meta charset="<?php bloginfo('charset'); ?>">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="<?php bloginfo( 'charset' ); ?>">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="profile" href="https://gmpg.org/xfn/11">
 <?php wp_head(); ?>
 </head>
-<body <?php body_class(); ?>>
-<a class="tr-sr" href="#primary-content"><?php _e('Skip to content','trashchurch-retro-199x'); ?></a>
-<div class="tr-wrapper">
-  <header class="tr-header">
-    <?php if ( has_custom_logo() ) the_custom_logo(); ?>
-    <h1 class="tr-title"><a href="<?php echo esc_url( home_url('/') ); ?>"><?php bloginfo('name'); ?></a></h1>
-    <div class="tr-tagline"><?php bloginfo('description'); ?></div>
 
-    <button class="tr-nav-toggle" id="tr-nav-toggle" aria-expanded="false" aria-controls="tr-primary-nav">
-      <?php esc_html_e('MENU','trashchurch-retro-199x'); ?> ☰
+<body <?php body_class(); ?>>
+<?php wp_body_open(); ?>
+
+<a class="tr-sr" href="#content"><?php esc_html_e( 'Skip to content', 'trashchurch-retro-199x' ); ?></a>
+
+<div class="tr-wrapper">
+
+  <header class="tr-header" role="banner" aria-label="<?php esc_attr_e( 'Site header', 'trashchurch-retro-199x' ); ?>">
+    <?php get_template_part( 'header-title-wrap-by-id' ); ?>
+
+    <button
+      class="tr-nav-toggle"
+      aria-expanded="false"
+      aria-controls="site-navigation"
+      aria-label="<?php esc_attr_e( 'Primary menu', 'trashchurch-retro-199x' ); ?>"
+    >
+      <span class="tr-sr"><?php esc_html_e( 'Menu', 'trashchurch-retro-199x' ); ?></span>
     </button>
 
-    <nav class="tr-nav" id="tr-primary-nav" role="navigation" aria-label="<?php esc_attr_e('Primary Menu','trashchurch-retro-199x'); ?>">
+    <nav id="site-navigation" class="tr-nav" role="navigation" aria-label="<?php esc_attr_e( 'Primary menu', 'trashchurch-retro-199x' ); ?>">
       <?php
-        wp_nav_menu(array(
-          'theme_location'=>'primary',
-          'container'=>false,
-          'fallback_cb'=>function(){
-            echo '<ul><li><a href="'.esc_url(home_url('/')).'">'.esc_html__('Home','trashchurch-retro-199x').'</a></li></ul>';
-          }
-        ));
+      wp_nav_menu( array(
+        'theme_location' => 'primary',
+        'menu_class'     => 'tr-main-menu',
+        'container'      => false,
+        'depth'          => 2,
+        'fallback_cb'    => false,
+      ) );
       ?>
     </nav>
 
-    <?php if ( get_theme_mod('tr199x_enable_marquee', false ) ) : ?>
-      <div class="tr-marquee">
-        <marquee scrollamount="<?php echo intval(get_theme_mod('tr199x_marquee_speed',10)); ?>">
-          <?php echo esc_html( get_theme_mod('tr199x_marquee_text', __('WELCOME TO THE TRASHCHURCH RETRO 199X PORTAL! ADJUST EFFECTS IN CUSTOMIZER!','trashchurch-retro-199x')) ); ?>
-        </marquee>
-      </div>
-    <?php endif; ?>
+    <!-- marquee / other header bits follow... -->
+
   </header>
+
+  <div id="content" class="site-content">
