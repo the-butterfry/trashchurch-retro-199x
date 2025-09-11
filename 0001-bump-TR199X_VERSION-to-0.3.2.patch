@@ -1,7 +1,7 @@
 From 9f3b1a6c7d8e4fa1b2c3d4e5f678901234567890 Mon Sep 17 00:00:00 2001
 From: the-butterfry <the-butterfry@users.noreply.github.com>
 Date: Thu, 11 Sep 2025 01:21:09 +0000
-Subject: [PATCH] Bump TR199X_VERSION to 0.3.2; robust nav toggle; add nav CSS
+Subject: [PATCH] Bump TR199X_VERSION to 0.3.3; robust nav toggle; add nav CSS
 
 Make the nav toggle robust to either id or class markup, add a small
 scoped CSS asset to hide the collapsed nav on small screens, and bump the
@@ -105,10 +105,10 @@ Files changed:
 +++ b/functions.php
 @@ -1,6 +1,6 @@
 -if ( ! defined('TR199X_VERSION') ) {
--    define('TR199X_VERSION', '0.3.2');
+-    define('TR199X_VERSION', '0.3.3');
 -}
 +if ( ! defined('TR199X_VERSION') ) {
-+    define('TR199X_VERSION', '0.3.2');
++    define('TR199X_VERSION', '0.3.3');
 +}
 -- 
 2.41.0
