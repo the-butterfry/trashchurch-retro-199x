@@ -544,7 +544,12 @@ if ( ! function_exists( 'tr199x_restrict_pages_to_wp_login' ) ) {
 
         // 1) Prefer WP-aware check by ID (is_page accepts array of IDs)
         if ( is_page( $restricted_ids ) ) {
-            wp_safe_redirect( wp_login_url( get_permalink() ) );
+            $target = get_permalink();
+            // Preserve current query string
+            if ( ! empty( $_SERVER['QUERY_STRING'] ) ) {
+                $target = add_query_arg( $_GET, $target );
+            }
+            wp_safe_redirect( wp_login_url( $target ) );
             exit;
         }
 
@@ -565,10 +570,29 @@ if ( ! function_exists( 'tr199x_restrict_pages_to_wp_login' ) ) {
         }
 
         if ( in_array( $request_path, $restricted_slugs, true ) || ( $first_segment && in_array( $first_segment, $restricted_slugs, true ) ) ) {
-            // Preserve query string in redirect_to
-            $current_url = ( (! empty( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] !== 'off') || ( isset( $_SERVER['SERVER_PORT'] ) && intval( $_SERVER['SERVER_PORT'] ) === 443 ) ) ? 'https://' : 'http://';
-            $current_url .= ( $_SERVER['HTTP_HOST'] ?? '' ) . ( $_SERVER['REQUEST_URI'] ?? '' );
-            wp_safe_redirect( wp_login_url( $current_url ) );
+            // Try to resolve slug to page ID for canonical permalink
+            $target = null;
+            $matched_slug = in_array( $request_path, $restricted_slugs, true ) ? $request_path : $first_segment;
+            
+            foreach ( $restricted_ids as $id ) {
+                $post = get_post( $id );
+                if ( $post && $post->post_name === $matched_slug ) {
+                    $target = get_permalink( $id );
+                    break;
+                }
+            }
+            
+            // Fallback to home_url if couldn't resolve to page ID
+            if ( ! $target ) {
+                $target = home_url( '/' . ltrim( $request_path, '/' ) );
+            }
+            
+            // Preserve current query string
+            if ( ! empty( $_SERVER['QUERY_STRING'] ) ) {
+                $target = add_query_arg( $_GET, $target );
+            }
+            
+            wp_safe_redirect( wp_login_url( $target ) );
             exit;
         }
 
@@ -586,6 +610,39 @@ if ( ! function_exists( 'tr199x_restrict_pages_to_wp_login' ) ) {
             ) );
         }
     }
+}
+
+/* ------------------------------------------------------------------
+ * Login redirect filter to ensure redirect_to parameter is respected
+ * - Prefers the requested redirect_to value when present
+ * - Prevents other plugins from overriding the intended destination after login
+ * ------------------------------------------------------------------ */
+
+if ( ! function_exists( 'tr199x_login_redirect_to_requested_page' ) ) {
+    /**
+     * Ensure users are redirected to the originally requested page after login.
+     * This filter runs after authentication and prefers the redirect_to parameter
+     * over the default dashboard redirect.
+     *
+     * @param string $redirect_to URL to redirect to after login.
+     * @param string $request Requested redirect destination.
+     * @param WP_User|WP_Error $user The user object or error.
+     * @return string The redirect URL.
+     */
+    function tr199x_login_redirect_to_requested_page( $redirect_to, $request, $user ) {
+        // Only process for successful logins
+        if ( is_wp_error( $user ) ) {
+            return $redirect_to;
+        }
+        
+        // Prefer the requested redirect_to value when present
+        if ( ! empty( $request ) && wp_validate_redirect( $request ) ) {
+            return $request;
+        }
+        
+        return $redirect_to;
+    }
+    add_filter( 'login_redirect', 'tr199x_login_redirect_to_requested_page', 10, 3 );
 }
 
 /* End of functions.php */
