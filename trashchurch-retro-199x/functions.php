@@ -100,6 +100,26 @@ function tr199x_scripts() {
     if ( get_theme_mod('tr199x_enable_midi', false) ) {
         // MIDI embed handled in footer hook
     }
+
+    // Load custom header font if selected
+    $header_font_file = get_theme_mod('tr199x_header_font_file', '');
+    if ( !empty($header_font_file) ) {
+        $available_fonts = tr199x_get_available_header_fonts();
+        if ( array_key_exists($header_font_file, $available_fonts) ) {
+            $font_url = esc_url( get_template_directory_uri() . '/assets/fonts/' . $header_font_file );
+            $css = "
+                @font-face {
+                    font-family: 'TR199X-Header';
+                    src: url('{$font_url}') format('truetype');
+                    font-display: swap;
+                }
+                :root {
+                    --tr-header-font: 'TR199X-Header', var(--tr-font);
+                }
+            ";
+            wp_add_inline_style('tr199x-style', $css);
+        }
+    }
 }
 add_action('wp_enqueue_scripts','tr199x_scripts');
 
@@ -129,6 +149,28 @@ function tr199x_allow_marquee( $tags ) {
 }
 add_filter('wp_kses_allowed_html','tr199x_allow_marquee',10,1);
 
+/* Header Font Helper */
+function tr199x_get_available_header_fonts() {
+    $fonts = array();
+    $fonts_dir = get_template_directory() . '/assets/fonts';
+    
+    if ( is_dir( $fonts_dir ) ) {
+        $files = scandir( $fonts_dir );
+        if ( $files ) {
+            foreach ( $files as $file ) {
+                if ( pathinfo( $file, PATHINFO_EXTENSION ) === 'ttf' ) {
+                    $basename = pathinfo( $file, PATHINFO_FILENAME );
+                    // Create a friendly name from filename
+                    $friendly_name = ucwords( str_replace( array('-', '_'), ' ', $basename ) ) . ' (TTF)';
+                    $fonts[ $file ] = $friendly_name;
+                }
+            }
+        }
+    }
+    
+    return $fonts;
+}
+
 /* Customizer */
 function tr199x_customize($wp) {
 
@@ -155,6 +197,27 @@ function tr199x_customize($wp) {
             'amber'=>'Amber/Gold',
             'magenta'=>'Purple/Magenta'
         )
+    ));
+
+    // Header Font
+    $wp->add_setting('tr199x_header_font_file', array(
+        'default'=>'',
+        'sanitize_callback'=>function($v) {
+            $available_fonts = tr199x_get_available_header_fonts();
+            return ( empty($v) || array_key_exists($v, $available_fonts) ) ? $v : '';
+        }
+    ));
+    
+    $available_fonts = tr199x_get_available_header_fonts();
+    $font_choices = array( '' => 'System Sans (default)' );
+    $font_choices = array_merge( $font_choices, $available_fonts );
+    
+    $wp->add_control('tr199x_header_font_file', array(
+        'label'=>__('Header Font','trashchurch-retro-199x'),
+        'type'=>'select',
+        'section'=>'tr199x_retro',
+        'choices'=>$font_choices,
+        'description'=>__('Select a custom font for the site header title and tagline.')
     ));
 
     // Marquee

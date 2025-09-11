@@ -25,6 +25,7 @@ Tags: blog, retro, custom-background, custom-logo, responsive-layout, accessibil
   --tr-link: #66ddff;
   --tr-link-hover: #fff;
   --tr-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  --tr-header-font: var(--tr-font);
   --tr-mono: "Courier New",ui-monospace,monospace;
   --tr-radius: 10px;
   --tr-max: 1280px;
@@ -726,7 +727,7 @@ table.retro-table td {
 .tr-title,
 .tr-title a,
 .tr-tagline {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif !important;
+  font-family: var(--tr-header-font);
 }
 
 .tr-title {
