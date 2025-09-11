@@ -10,11 +10,11 @@
  *
  * Notes:
  * - This file is defensive: it checks for function existence and only requires the customizer file if present.
- * - Version constant set to 0.3.3 as requested.
+ * - Version constant set to 0.3.4 as requested.
  */
 
 if ( ! defined('TR199X_VERSION') ) {
-    define('TR199X_VERSION', '0.3.3');
+    define('TR199X_VERSION', '0.3.4');
 }
 
 function tr199x_setup() {
