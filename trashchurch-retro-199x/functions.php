@@ -5,7 +5,7 @@
  */
 
 if ( ! defined('TR199X_VERSION') ) {
-    define('TR199X_VERSION', '0.2.0');
+    define('TR199X_VERSION', '0.3.2');
 }
 
 function tr199x_setup() {
