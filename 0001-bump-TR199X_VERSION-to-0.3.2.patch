@@ -105,7 +105,7 @@ Files changed:
 +++ b/functions.php
 @@ -1,6 +1,6 @@
 -if ( ! defined('TR199X_VERSION') ) {
--    define('TR199X_VERSION', '0.3.1');
+-    define('TR199X_VERSION', '0.3.2');
 -}
 +if ( ! defined('TR199X_VERSION') ) {
 +    define('TR199X_VERSION', '0.3.2');
