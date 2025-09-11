@@ -3,8 +3,7 @@
  * The header for our theme
  *
  * (excerpt) - this file now puts Menu text into a screen-reader-only <span>
- */
-?><!doctype html>
+ */ ?><!doctype html>
 <html <?php language_attributes(); ?>>
 <head>
 <meta charset="<?php bloginfo( 'charset' ); ?>">
@@ -29,6 +28,8 @@
       aria-controls="site-navigation"
       aria-label="<?php esc_attr_e( 'Primary menu', 'trashchurch-retro-199x' ); ?>"
     >
+      <!-- visible CSS-drawn hamburger (aria-hidden so screen readers use the sr-only text) -->
+      <span class="tr-hamburger" aria-hidden="true"></span>
       <span class="tr-sr"><?php esc_html_e( 'Menu', 'trashchurch-retro-199x' ); ?></span>
     </button>
 

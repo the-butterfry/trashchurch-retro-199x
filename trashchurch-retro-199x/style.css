@@ -754,4 +754,12 @@ body:not(.page-template-page-teamup-calendar) .tr-teamup.tr-pipe-frame {
   border-left: 4px solid var(--tr-border);
 }
 
+@media (max-width: 980px) {
+  .tr-header .tr-nav.tr-collapsed,
+  .tr-header #tr-primary-nav.tr-collapsed,
+  .tr-header #site-navigation.tr-collapsed {
+    display: none;
+  }
+}
+
 /* End of file */
