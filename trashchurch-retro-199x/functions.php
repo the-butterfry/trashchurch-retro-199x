@@ -17,6 +17,10 @@ if ( ! defined('TR199X_VERSION') ) {
     define('TR199X_VERSION', '0.3.4');
 }
 
+if ( file_exists( get_template_directory() . '/inc/login-branding.php' ) ) {
+    require_once get_template_directory() . '/inc/login-branding.php';
+}
+
 function tr199x_setup() {
     add_theme_support('title-tag');
     add_theme_support('post-thumbnails');

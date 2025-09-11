@@ -24,7 +24,7 @@ Tags: blog, retro, custom-background, custom-logo, responsive-layout, accessibil
   --tr-accent-2: #00ffcc;
   --tr-link: #66ddff;
   --tr-link-hover: #fff;
-  --tr-font: "Comic Sans MS","Trebuchet MS","Verdana",sans-serif;
+  --tr-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
   --tr-mono: "Courier New",ui-monospace,monospace;
   --tr-radius: 10px;
   --tr-max: 1280px;
@@ -722,7 +722,7 @@ table.retro-table td {
   color: var(--tr-accent-2);
   margin-top:10px;
 }
-/* === Header UI cleanup: center site title/tagline, remove Comic Sans for them only === */
+/* === Header UI cleanup: center site title/tagline, prefer system sans for them only === */
 .tr-title,
 .tr-title a,
 .tr-tagline {
