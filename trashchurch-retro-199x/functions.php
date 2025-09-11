@@ -2,6 +2,15 @@
 /**
  * TrashChurch Retro 199X Functions
  * Version 0.2.0 (Adds Hit Counter system)
+ *
+ * Integrated:
+ * - Optional Customizer include for selecting restricted pages (inc/customizer-restricted-pages.php)
+ * - Helpers to read restricted page IDs from Customizer/theme_mod (supports legacy key 'tc_restricted_pages')
+ * - template_redirect hook to send non-logged-in visitors to wp-login.php for selected pages
+ *
+ * Notes:
+ * - This file is defensive: it checks for function existence and only requires the customizer file if present.
+ * - Version constant set to 0.3.3 as requested.
  */
 
 if ( ! defined('TR199X_VERSION') ) {
@@ -425,6 +434,15 @@ function tr199x_customize($wp) {
 }
 add_action('customize_register','tr199x_customize');
 
+/* If an optional Customizer helper exists, include it. This file (inc/customizer-restricted-pages.php)
+ * provides a multi-select pages control and stores a theme_mod (key: 'tr199x_restricted_pages' by default).
+ * The file is optional — include only when present to avoid fatal errors.
+ */
+$tr199x_customizer_file = get_template_directory() . '/inc/customizer-restricted-pages.php';
+if ( file_exists( $tr199x_customizer_file ) ) {
+    require_once $tr199x_customizer_file;
+}
+
 /* MIDI Embed */
 function tr199x_midi_embed() {
     if ( get_theme_mod('tr199x_enable_midi', false) ) {
@@ -435,11 +453,135 @@ function tr199x_midi_embed() {
 add_action('wp_footer','tr199x_midi_embed');
 
 /* Include Hit Counter System */
-require_once get_template_directory() . '/inc/hit-counter.php';
-// Teamup Calendar integration
-require_once get_template_directory() . '/inc/teamup-calendar.php';
+if ( file_exists( get_template_directory() . '/inc/hit-counter.php' ) ) {
+    require_once get_template_directory() . '/inc/hit-counter.php';
+}
+
+/* Teamup Calendar integration */
+if ( file_exists( get_template_directory() . '/inc/teamup-calendar.php' ) ) {
+    require_once get_template_directory() . '/inc/teamup-calendar.php';
+}
 
 function tr_enqueue_teamup_styles() {
   wp_enqueue_style( 'tr-teamup', get_template_directory_uri() . '/assets/css/teamup.css', array(), '1.0' );
 }
 add_action( 'wp_enqueue_scripts', 'tr_enqueue_teamup_styles' );
+
+/* ------------------------------------------------------------------
+ * Restricted pages support + redirect logic
+ * - Reads selection from theme_mod 'tr199x_restricted_pages'
+ * - Also accepts legacy 'tc_restricted_pages' theme_mod or site option 'tc_restricted_pages'
+ * - Safe: wrapped in function_exists guards and skips admin/REST/AJAX contexts
+ * ------------------------------------------------------------------ */
+
+if ( ! function_exists( 'tr199x_get_restricted_page_ids' ) ) {
+    /**
+     * Return array of restricted page IDs (ints).
+     * Accepts:
+     *  - theme_mod 'tr199x_restricted_pages' (preferred)
+     *  - theme_mod 'tc_restricted_pages' (legacy)
+     *  - option 'tc_restricted_pages' (mu-plugin migration)
+     *
+     * Stored value can be CSV string or array; this normalizes to array of ints.
+     *
+     * @return int[]
+     */
+    function tr199x_get_restricted_page_ids() {
+        // Primary (theme Mod set via customizer include): tr199x_restricted_pages
+        $raw = get_theme_mod( 'tr199x_restricted_pages', '' );
+
+        // Fallback: legacy theme_mod used by earlier snippets (tc_restricted_pages)
+        if ( empty( $raw ) ) {
+            $raw = get_theme_mod( 'tc_restricted_pages', '' );
+        }
+
+        // Fallback: option (used by mu-plugin migration or site-wide storage)
+        if ( empty( $raw ) ) {
+            $raw = get_option( 'tc_restricted_pages', '' );
+        }
+
+        if ( empty( $raw ) ) {
+            return array();
+        }
+
+        if ( is_array( $raw ) ) {
+            $ids = $raw;
+        } else {
+            $ids = array_filter( array_map( 'trim', explode( ',', (string) $raw ) ) );
+        }
+
+        $ids = array_map( 'absint', $ids );
+        $ids = array_filter( $ids );
+
+        return $ids;
+    }
+}
+
+if ( ! function_exists( 'tr199x_restrict_pages_to_wp_login' ) ) {
+    add_action( 'template_redirect', 'tr199x_restrict_pages_to_wp_login', 1 );
+    /**
+     * Redirect non-logged-in visitors to wp-login.php when they request a restricted page.
+     */
+    function tr199x_restrict_pages_to_wp_login() {
+        // Do not run in admin, REST, cron, or AJAX contexts
+        if ( is_admin() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() ) ) {
+            return;
+        }
+
+        // Allow logged-in users
+        if ( is_user_logged_in() ) {
+            return;
+        }
+
+        $restricted_ids = tr199x_get_restricted_page_ids();
+        if ( empty( $restricted_ids ) ) {
+            return;
+        }
+
+        // 1) Prefer WP-aware check by ID (is_page accepts array of IDs)
+        if ( is_page( $restricted_ids ) ) {
+            wp_safe_redirect( wp_login_url( get_permalink() ) );
+            exit;
+        }
+
+        // 2) Fallback: match the request URI path to selected pages' slugs
+        $request_path = trim( parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH ), '/' );
+        $home_path    = trim( parse_url( home_url(), PHP_URL_PATH ), '/' );
+        if ( $home_path && strpos( $request_path, $home_path ) === 0 ) {
+            $request_path = ltrim( substr( $request_path, strlen( $home_path ) ), '/' );
+        }
+        $first_segment = strtok( $request_path, '/' );
+
+        $restricted_slugs = array();
+        foreach ( $restricted_ids as $id ) {
+            $post = get_post( $id );
+            if ( $post && ! empty( $post->post_name ) ) {
+                $restricted_slugs[] = $post->post_name;
+            }
+        }
+
+        if ( in_array( $request_path, $restricted_slugs, true ) || ( $first_segment && in_array( $first_segment, $restricted_slugs, true ) ) ) {
+            // Preserve query string in redirect_to
+            $current_url = ( (! empty( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] !== 'off') || ( isset( $_SERVER['SERVER_PORT'] ) && intval( $_SERVER['SERVER_PORT'] ) === 443 ) ) ? 'https://' : 'http://';
+            $current_url .= ( $_SERVER['HTTP_HOST'] ?? '' ) . ( $_SERVER['REQUEST_URI'] ?? '' );
+            wp_safe_redirect( wp_login_url( $current_url ) );
+            exit;
+        }
+
+        // Optional debug trace for developers (only when WP_DEBUG)
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            $queried = get_queried_object();
+            error_log( sprintf(
+                '[tr199x_restrict_pages] request="%s", request_path="%s", first_segment="%s", is_page=%s, queried_type=%s, queried_id=%s',
+                $_SERVER['REQUEST_URI'] ?? '',
+                $request_path,
+                $first_segment,
+                is_page() ? 'true' : 'false',
+                isset( $queried->post_type ) ? $queried->post_type : 'N/A',
+                isset( $queried->ID ) ? $queried->ID : 'N/A'
+            ) );
+        }
+    }
+}
+
+/* End of functions.php */
