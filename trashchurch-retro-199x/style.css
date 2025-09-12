@@ -1022,3 +1022,47 @@ code, pre, .tr-mono,
   border-radius: 0 !important;
   box-shadow: none !important;
 }
+/* Tagline stacked under the title, indented 10px to the right */
+.tr-title-stack {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;  /* align left within the centered group */
+  justify-content: center;
+  gap: 6px;
+}
+
+.tr-title {
+  text-align: left !important;
+}
+
+.tr-tagline {
+  margin: 0 0 0 10px !important;  /* 10px to the right of the title */
+  text-align: left !important;
+  transform: none !important;      /* no Y-offset when stacked */
+  white-space: normal;             /* allow wrapping as needed */
+}
+/* Header logo images: remove all decorative framing for full transparency */
+.tr-title-img {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Keep title/tagline stacked; left-align the stack; indent tagline 10px */
+.tr-title-wrap .tr-title-stack {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important; /* left-align within centered wrap */
+  justify-content: center;
+  gap: 6px;
+}
+.tr-title-wrap .tr-title {
+  text-align: left !important;
+}
+.tr-title-wrap .tr-tagline {
+  margin: 0 0 0 10px !important;  /* 10px to the right of the title */
+  text-align: left !important;
+  transform: none !important;      /* no vertical offset when stacked */
+  white-space: normal;             /* wrap naturally */
+}
