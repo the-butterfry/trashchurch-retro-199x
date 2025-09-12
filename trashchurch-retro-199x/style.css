@@ -3,7 +3,7 @@ Theme Name: TrashChurch Retro 199X
 Theme URI: https://example.com/trashchurch-retro-199x
 Author: the-butterfry
 Author URI: https://github.com/the-butterfry
-Description: Maximalist late 1990s geocities/angelfire style with marquee, comet cursor, tiled GIFs, MIDI (optional), retro hit counter (global + per-post), digit GIF sprites. Fully responsive + accessibility-ready,
+Description: Maximalist late 1990s geocities/angelfire style with marquee, comet cursor, tiled GIFs, MIDI (optional), retro hit counter (global + per-post), digit GIF sprites. Fully responsive + accessibility-ready + retro fun.
 Version: 0.2.3
 License: GPL-2.0-or-later
 Text Domain: trashchurch-retro-199x
@@ -26,6 +26,7 @@ Tags: blog, retro, custom-background, custom-logo, responsive-layout, accessibil
   --tr-link-hover: #fff;
   --tr-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
   --tr-mono: "Courier New",ui-monospace,monospace;
+  --tr-header-font: var(--tr-font);
   --tr-radius: 10px;
   --tr-max: 1280px;
   --tr-focus: #ffcc33;
@@ -722,11 +723,12 @@ table.retro-table td {
   color: var(--tr-accent-2);
   margin-top:10px;
 }
+
 /* === Header UI cleanup: center site title/tagline, prefer system sans for them only === */
 .tr-title,
 .tr-title a,
 .tr-tagline {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif !important;
+  font-family: var(--tr-header-font) !important;
 }
 
 .tr-title {
@@ -763,3 +765,132 @@ body:not(.page-template-page-teamup-calendar) .tr-teamup.tr-pipe-frame {
 }
 
 /* End of file */
+/* === Additional CSS migration: header/title wrap, fonts, hamburger (appended) === */
+
+/* Neutralize any @font-face named "Comic Sans MS" by mapping it to a safe local font */
+@font-face {
+  font-family: "Comic Sans MS";
+  src: local("Arial");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+/* Defensive site-wide stack (loaded last). Then immediately restore known mono/header uses. */
+*,
+*::before,
+*::after {
+  font-family: var(--tr-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
+}
+
+/* Restore areas that must stay monospace or custom */
+code, pre, .tr-mono,
+.tr-nav li a, .tr-sidebar .widget-title {
+  font-family: var(--tr-mono) !important;
+}
+
+/* Respect the header font variable if present (from header-fonts module) */
+.tr-title, .tr-title a, .tr-tagline {
+  font-family: var(--tr-header-font, var(--tr-font)) !important;
+}
+
+/* Ensure header overlay sits behind text so tagline is visible */
+.tr-header { position: relative; }
+.tr-header::before { z-index: 0; }
+.tr-title, .tr-title a, .tr-tagline { position: relative; z-index: 1; }
+
+/* Title wrapper: center and allow icons on both sides */
+.tr-title-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 3vw, 32px);
+  position: relative;
+  padding: 6px 10px;
+}
+
+/* Keep existing visual treatment on the title (gradient clip etc.) */
+.tr-title-wrap .tr-title {
+  margin: 0;
+  display: inline-block;
+}
+
+/* Images flanking the title (inline, not absolutely positioned) */
+.tr-title-img {
+  display: block;
+  width: clamp(48px, 8vw, 120px);
+  height: auto;
+  max-height: 18vh;
+  object-fit: contain;
+  image-rendering: pixelated; /* retro pixel look if assets are pixel art */
+  pointer-events: none;
+  user-select: none;
+  transform: translateY(0);
+  transition: transform .18s ease;
+  box-shadow: 0 0 10px rgba(0,0,0,0.55);
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.04);
+  background: rgba(0,0,0,0.25);
+}
+
+/* small hover "bounce" for desktop */
+@media (hover: hover) and (pointer: fine) {
+  .tr-title-img:hover { transform: translateY(-6px) scale(1.02); }
+}
+
+/* Optional: slightly tuck images inwards visually */
+.tr-title-left  { margin-right: -8px; }
+.tr-title-right { margin-left: -8px; }
+
+/* Keep layout tidy on narrow screens: hide images under 720px */
+@media (max-width: 720px) {
+  .tr-title-img { display: none; }
+  .tr-title-wrap { gap: 8px; padding: 4px; }
+  .tr-title { font-size: clamp(1.6rem, 6vw, 2.6rem); }
+}
+
+/* ---------- Mobile hamburger helper (non-destructive) ---------- */
+/* Add <span class="tr-hamburger" aria-hidden="true"></span> inside .tr-nav-toggle for these styles */
+.tr-nav-toggle {
+  position: relative; /* enable z-index */
+  z-index: 9999;      /* keep it above decorative overlays */
+  padding: 8px 12px;  /* slight padding tweak for small screens */
+}
+
+/* Draw a 3-bar hamburger if markup includes a .tr-hamburger child */
+.tr-nav-toggle .tr-hamburger {
+  display: inline-block;
+  width: 26px;
+  height: 2px;
+  background: currentColor;
+  position: relative;
+  vertical-align: middle;
+  border-radius: 2px;
+  box-shadow: none;
+}
+.tr-nav-toggle .tr-hamburger::before,
+.tr-nav-toggle .tr-hamburger::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+}
+.tr-nav-toggle .tr-hamburger::before { top: -8px; }
+.tr-nav-toggle .tr-hamburger::after  { top: 8px; }
+
+@media (max-width: 980px) {
+  .tr-nav-toggle { display: block; color: var(--tr-accent); }
+}
+@media (min-width: 981px) {
+  .tr-nav-toggle .tr-hamburger { display: none; }
+}
+
+/* Optional open-state cross (if aria-expanded toggled elsewhere) */
+.tr-nav-toggle[aria-expanded="true"] .tr-hamburger { background: transparent; }
+.tr-nav-toggle[aria-expanded="true"] .tr-hamburger::before { transform: translateY(8px) rotate(45deg); }
+.tr-nav-toggle[aria-expanded="true"] .tr-hamburger::after  { transform: translateY(-8px) rotate(-45deg); }
+
+/* End Additional CSS migration */

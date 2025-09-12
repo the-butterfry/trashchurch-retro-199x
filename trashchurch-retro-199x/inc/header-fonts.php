@@ -1,0 +1,361 @@
+<?php
+/**
+ * Header Fonts + Typography module
+ * - Discovers assets/fonts/*.woff2|*.woff|*.ttf
+ * - Groups by family and variants parsed from filenames (weights/styles)
+ * - Adds Customizer select under 'tr199x_retro' (or falls back to 'title_tagline')
+ * - Injects @font-face + sets :root --tr-header-font for front-end
+ * - Adds live preview script for postMessage updates
+ * - Adds typography controls: title (weight, letter-spacing, line-height, size clamp), tagline (weight, letter-spacing, size)
+ */
+
+if ( ! defined( 'ABSPATH' ) ) { exit; }
+
+/** Parse filename into [familyLabel, weight, style] */
+function tr199x_parse_font_variant_from_filename( $basename_no_ext ) {
+    $norm = str_replace(array('_',' '), '-', $basename_no_ext);
+    $style = (stripos($norm, 'italic') !== false || stripos($norm, 'oblique') !== false) ? 'italic' : 'normal';
+
+    $weight = 400;
+    if ( preg_match('/(^|[-_])(100|200|300|400|500|600|700|800|900)([-_]|$)/i', $norm, $m) ) {
+        $weight = intval($m[2]);
+    } else {
+        $map = array(
+            'thin' => 100,
+            'extralight' => 200, 'ultralight' => 200,
+            'light' => 300,
+            'book' => 400, 'regular' => 400, 'normal' => 400,
+            'medium' => 500,
+            'semibold' => 600, 'demibold' => 600,
+            'bold' => 700,
+            'extrabold' => 800, 'ultrabold' => 800, 'heavy' => 800,
+            'black' => 900,
+        );
+        foreach ( $map as $k => $w ) {
+            if ( stripos($norm, $k) !== false ) { $weight = $w; break; }
+        }
+    }
+
+    $family = $norm;
+    $family = preg_replace('/-?(italic|oblique)$/i', '', $family);
+    $family = preg_replace('/-?(thin|extralight|ultralight|light|book|regular|normal|medium|semibold|demibold|bold|extrabold|ultrabold|heavy|black|[1-9]00)$/i', '', $family);
+    $family = preg_replace('/-+$/', '', $family);
+    if ( $family === '' ) $family = $basename_no_ext;
+
+    $family_label = trim( preg_replace('/-+/', ' ', $family) );
+    return array($family_label, $weight, $style);
+}
+
+/** families[slug] = [ 'label'=>..., 'faces'=> [ ['weight'=>..., 'style'=>..., 'srcs'=>['woff2'=>..., 'woff'=>..., 'ttf'=>...]] ] ] */
+function tr199x_get_header_font_families_map() {
+    $dir = trailingslashit( get_template_directory() ) . 'assets/fonts';
+    $uri = trailingslashit( get_template_directory_uri() ) . 'assets/fonts';
+    $families = array();
+
+    if ( ! is_dir( $dir ) ) {
+        return $families;
+    }
+    $files = array();
+    foreach ( array('ttf','woff','woff2') as $ext ) {
+        $glob = glob( $dir . '/*.' . $ext );
+        if ( $glob ) { $files = array_merge($files, $glob); }
+    }
+
+    foreach ( $files as $path ) {
+        $ext = strtolower( pathinfo($path, PATHINFO_EXTENSION) );
+        $base = pathinfo($path, PATHINFO_FILENAME);
+        list($family_label, $weight, $style) = tr199x_parse_font_variant_from_filename( $base );
+        $slug = sanitize_title( $family_label );
+
+        if ( ! isset( $families[$slug] ) ) {
+            $families[$slug] = array(
+                'label' => $family_label,
+                'faces' => array()
+            );
+        }
+
+        $key = $weight . '-' . $style;
+        if ( ! isset( $families[$slug]['faces'][$key] ) ) {
+            $families[$slug]['faces'][$key] = array(
+                'weight' => $weight,
+                'style'  => $style,
+                'srcs'   => array()
+            );
+        }
+
+        $families[$slug]['faces'][$key]['srcs'][$ext] = esc_url( trailingslashit($uri) . rawurlencode( basename($path) ) );
+    }
+
+    foreach ( $families as $slug => $data ) {
+        $families[$slug]['faces'] = array_values( $families[$slug]['faces'] );
+    }
+
+    return $families;
+}
+
+/** Select options: slug => label */
+function tr199x_get_available_header_fonts() {
+    $map = tr199x_get_header_font_families_map();
+    $out = array();
+    foreach ( $map as $slug => $data ) {
+        $out[$slug] = $data['label'];
+    }
+    return $out;
+}
+
+/** Build @font-face CSS and :root var for a family slug */
+function tr199x_build_header_font_css( $family_slug ) {
+    $map = tr199x_get_header_font_families_map();
+    if ( empty($family_slug) || ! isset($map[$family_slug]) ) {
+        return '';
+    }
+    $css = "/* tr199x header font: {$family_slug} */\n";
+    foreach ( $map[$family_slug]['faces'] as $face ) {
+        $srcs = array();
+        if ( ! empty($face['srcs']['woff2']) ) $srcs[] = "url('{$face['srcs']['woff2']}') format('woff2')";
+        if ( ! empty($face['srcs']['woff']) )  $srcs[] = "url('{$face['srcs']['woff']}') format('woff')";
+        if ( ! empty($face['srcs']['ttf']) )   $srcs[] = "url('{$face['srcs']['ttf']}') format('truetype')";
+        if ( empty($srcs) ) continue;
+
+        $w = intval($face['weight']);
+        $s = ($face['style'] === 'italic') ? 'italic' : 'normal';
+        $src = implode(', ', $srcs);
+        $css .= "@font-face{font-family:'TR199X-Header';font-style:{$s};font-weight:{$w};font-display:swap;src:{$src};}\n";
+    }
+    $css .= ":root{--tr-header-font:'TR199X-Header', var(--tr-font);}";
+
+    return $css;
+}
+
+/** Build typography CSS for title/tagline from theme_mods (sizes, weights, kerning, line-height) */
+function tr199x_build_header_typography_css() {
+    // Title defaults match theme CSS
+    $t_weight = (int) get_theme_mod('tr199x_header_title_weight', 900);
+    $t_ls    = (float) get_theme_mod('tr199x_header_title_letter_spacing', 2);
+    $t_lh    = (float) get_theme_mod('tr199x_header_title_line_height', 1.1);
+    $t_min   = (float) get_theme_mod('tr199x_header_title_size_min', 2.4); // rem
+    $t_vw    = (float) get_theme_mod('tr199x_header_title_size_vw', 6);   // vw
+    $t_max   = (float) get_theme_mod('tr199x_header_title_size_max', 3.8); // rem
+
+    // Tagline defaults match theme CSS
+    $g_weight = (int) get_theme_mod('tr199x_header_tagline_weight', 400);
+    $g_ls     = (float) get_theme_mod('tr199x_header_tagline_letter_spacing', 1);
+    $g_fs_px  = (int) get_theme_mod('tr199x_header_tagline_font_size_px', 14);
+
+    $css  = ".tr-title{font-weight:{$t_weight};letter-spacing:{$t_ls}px;line-height:{$t_lh};font-size:clamp({$t_min}rem, {$t_vw}vw, {$t_max}rem);}";
+
+    // Keep color/text effects from theme; only override typographic properties
+    $css .= ".tr-tagline{font-weight:{$g_weight};letter-spacing:{$g_ls}px;font-size:{$g_fs_px}px;}";
+
+    return $css;
+}
+
+/** Inline CSS on front-end after main stylesheet */
+function tr199x_header_font_inline_css() {
+    $styles = '';
+
+    // Font family selection
+    $selected = get_theme_mod('tr199x_header_font_family', '');
+    if ( $selected ) {
+        $fcss = tr199x_build_header_font_css( $selected );
+        if ( $fcss ) $styles .= $fcss . "\n";
+    }
+
+    // Typography overrides (always safe; defaults match theme)
+    $tcss = tr199x_build_header_typography_css();
+    if ( $tcss ) $styles .= $tcss . "\n";
+
+    if ( $styles ) {
+        wp_add_inline_style('tr199x-style', $styles);
+    }
+}
+add_action('wp_enqueue_scripts','tr199x_header_font_inline_css', 20);
+
+/** Live Customizer: setting/control + preview assets */
+function tr199x_sanitize_header_font_family( $slug ) {
+    $slug = sanitize_title( (string) $slug );
+    $choices = tr199x_get_available_header_fonts();
+    return array_key_exists($slug, $choices) ? $slug : '';
+}
+
+function tr199x_customize_header_font( $wp ) {
+    $section = 'tr199x_retro';
+    // If section not available yet, fallback
+    if ( method_exists( $wp, 'get_section' ) && ! $wp->get_section( $section ) ) {
+        $section = 'title_tagline';
+    }
+
+    $font_choices = array( '' => __('System Sans (default)', 'trashchurch-retro-199x') ) + tr199x_get_available_header_fonts();
+
+    $wp->add_setting('tr199x_header_font_family', array(
+        'default'           => '',
+        'sanitize_callback' => 'tr199x_sanitize_header_font_family',
+        'transport'         => 'postMessage',
+    ));
+    $wp->add_control('tr199x_header_font_family', array(
+        'label'       => __('Header Font','trashchurch-retro-199x'),
+        'type'        => 'select',
+        'section'     => $section,
+        'choices'     => $font_choices,
+        'description' => __('Auto-discovers .woff2/.woff/.ttf in assets/fonts. Use filenames like Family-BoldItalic.woff2', 'trashchurch-retro-199x')
+    ));
+
+    // Typography controls
+
+    // Title weight
+    $wp->add_setting('tr199x_header_title_weight', array(
+        'default' => 900,
+        'sanitize_callback' => function($v){
+            $v = (int) $v;
+            $allowed = array(100,200,300,400,500,600,700,800,900);
+            return in_array($v, $allowed, true) ? $v : 900;
+        },
+        'transport' => 'postMessage',
+    ));
+    $wp->add_control('tr199x_header_title_weight', array(
+        'label'   => __('Title Weight','trashchurch-retro-199x'),
+        'type'    => 'select',
+        'section' => $section,
+        'choices' => array(
+            100=>'100 Thin',200=>'200 ExtraLight',300=>'300 Light',400=>'400 Regular',
+            500=>'500 Medium',600=>'600 SemiBold',700=>'700 Bold',800=>'800 ExtraBold',900=>'900 Black'
+        ),
+    ));
+
+    // Title letter spacing (px)
+    $wp->add_setting('tr199x_header_title_letter_spacing', array(
+        'default' => 2,
+        'sanitize_callback' => function($v){ return max(-5, min(20, (float)$v )); },
+        'transport' => 'postMessage',
+    ));
+    $wp->add_control('tr199x_header_title_letter_spacing', array(
+        'label'       => __('Title Letter Spacing (px)','trashchurch-retro-199x'),
+        'type'        => 'number',
+        'section'     => $section,
+        'input_attrs' => array('step'=>'0.1','min'=>'-5','max'=>'20'),
+    ));
+
+    // Title line-height
+    $wp->add_setting('tr199x_header_title_line_height', array(
+        'default' => 1.1,
+        'sanitize_callback' => function($v){ return max(0.8, min(2.0, (float)$v )); },
+        'transport' => 'postMessage',
+    ));
+    $wp->add_control('tr199x_header_title_line_height', array(
+        'label'       => __('Title Line Height','trashchurch-retro-199x'),
+        'type'        => 'number',
+        'section'     => $section,
+        'input_attrs' => array('step'=>'0.05','min'=>'0.8','max'=>'2.0'),
+    ));
+
+    // Title size clamp parts
+    $wp->add_setting('tr199x_header_title_size_min', array(
+        'default' => 2.4,
+        'sanitize_callback' => function($v){ return max(1.0, min(8.0, (float)$v )); },
+        'transport' => 'postMessage',
+    ));
+    $wp->add_control('tr199x_header_title_size_min', array(
+        'label'       => __('Title Size Min (rem)','trashchurch-retro-199x'),
+        'type'        => 'number',
+        'section'     => $section,
+        'input_attrs' => array('step'=>'0.1','min'=>'1.0','max'=>'8.0'),
+    ));
+
+    $wp->add_setting('tr199x_header_title_size_vw', array(
+        'default' => 6.0,
+        'sanitize_callback' => function($v){ return max(0.0, min(12.0, (float)$v )); },
+        'transport' => 'postMessage',
+    ));
+    $wp->add_control('tr199x_header_title_size_vw', array(
+        'label'       => __('Title Size Preferred (vw)','trashchurch-retro-199x'),
+        'type'        => 'number',
+        'section'     => $section,
+        'input_attrs' => array('step'=>'0.1','min'=>'0','max'=>'12'),
+    ));
+
+    $wp->add_setting('tr199x_header_title_size_max', array(
+        'default' => 3.8,
+        'sanitize_callback' => function($v){ return max(1.0, min(10.0, (float)$v )); },
+        'transport' => 'postMessage',
+    ));
+    $wp->add_control('tr199x_header_title_size_max', array(
+        'label'       => __('Title Size Max (rem)','trashchurch-retro-199x'),
+        'type'        => 'number',
+        'section'     => $section,
+        'input_attrs' => array('step'=>'0.1','min'=>'1.0','max'=>'10.0'),
+    ));
+
+    // Tagline weight
+    $wp->add_setting('tr199x_header_tagline_weight', array(
+        'default' => 400,
+        'sanitize_callback' => function($v){
+            $v = (int) $v;
+            $allowed = array(300,400,500,600,700);
+            return in_array($v, $allowed, true) ? $v : 400;
+        },
+        'transport' => 'postMessage',
+    ));
+    $wp->add_control('tr199x_header_tagline_weight', array(
+        'label'   => __('Tagline Weight','trashchurch-retro-199x'),
+        'type'    => 'select',
+        'section' => $section,
+        'choices' => array(
+            300=>'300 Light',400=>'400 Regular',500=>'500 Medium',600=>'600 SemiBold',700=>'700 Bold'
+        ),
+    ));
+
+    // Tagline letter spacing (px)
+    $wp->add_setting('tr199x_header_tagline_letter_spacing', array(
+        'default' => 1,
+        'sanitize_callback' => function($v){ return max(-3, min(10, (float)$v )); },
+        'transport' => 'postMessage',
+    ));
+    $wp->add_control('tr199x_header_tagline_letter_spacing', array(
+        'label'       => __('Tagline Letter Spacing (px)','trashchurch-retro-199x'),
+        'type'        => 'number',
+        'section'     => $section,
+        'input_attrs' => array('step'=>'0.1','min'=>'-3','max'=>'10'),
+    ));
+
+    // Tagline font size (px)
+    $wp->add_setting('tr199x_header_tagline_font_size_px', array(
+        'default' => 14,
+        'sanitize_callback' => function($v){ return max(8, min(36, (int)$v )); },
+        'transport' => 'postMessage',
+    ));
+    $wp->add_control('tr199x_header_tagline_font_size_px', array(
+        'label'       => __('Tagline Font Size (px)','trashchurch-retro-199x'),
+        'type'        => 'number',
+        'section'     => $section,
+        'input_attrs' => array('step'=>'1','min'=>'8','max'=>'36'),
+    ));
+}
+add_action('customize_register','tr199x_customize_header_font', 20);
+
+function tr199x_customize_preview_assets() {
+    wp_enqueue_script(
+        'tr199x-customize-preview',
+        get_template_directory_uri() . '/assets/js/customize-preview.js',
+        array('customize-preview'),
+        defined('TR199X_VERSION') ? TR199X_VERSION : '1.0',
+        true
+    );
+
+    $map = tr199x_get_header_font_families_map();
+    wp_localize_script('tr199x-customize-preview','TR199X_FONTMAP', array(
+        'selected' => get_theme_mod('tr199x_header_font_family', ''),
+        'families' => $map,
+        'typo'     => array(
+            't_weight' => (int) get_theme_mod('tr199x_header_title_weight', 900),
+            't_ls'     => (float) get_theme_mod('tr199x_header_title_letter_spacing', 2),
+            't_lh'     => (float) get_theme_mod('tr199x_header_title_line_height', 1.1),
+            't_min'    => (float) get_theme_mod('tr199x_header_title_size_min', 2.4),
+            't_vw'     => (float) get_theme_mod('tr199x_header_title_size_vw', 6.0),
+            't_max'    => (float) get_theme_mod('tr199x_header_title_size_max', 3.8),
+            'g_weight' => (int) get_theme_mod('tr199x_header_tagline_weight', 400),
+            'g_ls'     => (float) get_theme_mod('tr199x_header_tagline_letter_spacing', 1),
+            'g_fs_px'  => (int) get_theme_mod('tr199x_header_tagline_font_size_px', 14),
+        )
+    ));
+}
+add_action('customize_preview_init','tr199x_customize_preview_assets');

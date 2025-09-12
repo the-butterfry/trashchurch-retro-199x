@@ -64,15 +64,16 @@ body.login label[for="rememberme"] {
   color: #ffffff;
 }
 
-/* Inputs now use white text for both placeholder and entered value.
-   Background and borders keep the theme look (dark panel style). */
+/* Inputs default to dark panel style.
+   General case: white text on dark background.
+   The two main fields (#user_login, #user_pass) are overridden below to use a white background and dark text. */
 body.login .input,
 body.login input[type="text"],
 body.login input[type="password"] {
   width: 100%;
   background: #050020;
   border: 2px solid var(--tr-border-alt);
-  color: #ffffff;                    /* typed text color: white */
+  color: #ffffff;                    /* typed text color: white (general case) */
   padding: 10px 12px;
   border-radius: 12px;
   box-shadow: inset 0 0 10px #000;
@@ -80,7 +81,7 @@ body.login input[type="password"] {
   margin-bottom: 12px;
 }
 
-/* Ensure the Username/Email and Password placeholders are readable (white-ish) */
+/* Default placeholders on dark inputs */
 body.login input[type="text"]::placeholder,
 body.login input[type="password"]::placeholder,
 body.login #user_login::placeholder,
@@ -88,12 +89,18 @@ body.login #user_pass::placeholder {
   color: rgba(255,255,255,0.75);
 }
 
-/* Inputs background and color enforced for consistency */
+/* Enforce white background and dark text for the Username and Password fields */
 body.login #user_login,
 body.login #user_pass {
-  background: #050020 !important;
-  color: #ffffff !important;
+  background: #ffffff !important;
+  color: #111111 !important;
   border-color: var(--tr-border-alt) !important;
+}
+
+/* Override placeholders for the white-background fields so they remain readable */
+body.login #user_login::placeholder,
+body.login #user_pass::placeholder {
+  color: rgba(0,0,0,0.55);
 }
 
 /* Messages (logout, errors) — readable against the panel background */
