@@ -45,17 +45,7 @@
       ?>
     </nav>
 
-    <?php if ( get_theme_mod( 'tr199x_enable_marquee', false ) ) : 
-      $mtext  = get_theme_mod( 'tr199x_marquee_text', __( 'WELCOME TO THE TRASHCHURCH RETRO 199X PORTAL! ADJUST EFFECTS IN CUSTOMIZER!', 'trashchurch-retro-199x' ) );
-      $mspeed = (int) get_theme_mod( 'tr199x_marquee_speed', 10 );
-      $mspeed = max( 1, min( 40, $mspeed ) );
-    ?>
-      <div class="tr-marquee" role="region" aria-label="<?php esc_attr_e( 'Site news ticker', 'trashchurch-retro-199x' ); ?>">
-        <marquee behavior="scroll" direction="left" scrollamount="<?php echo esc_attr( $mspeed ); ?>">
-          <?php echo esc_html( $mtext ); ?>
-        </marquee>
-      </div>
-    <?php endif; ?>
+    <!-- marquee / other header bits follow... -->
 
   </header>
 

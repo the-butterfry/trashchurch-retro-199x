@@ -22,7 +22,7 @@ if ( file_exists( get_template_directory() . '/inc/login-branding.php' ) ) {
 }
 
 /**
- * Optional header-fonts include (safe; only loads if present)
+ * NEW: Optional header-fonts include (safe; only loads if present)
  * - Provides Customizer control, @font-face injection (TTF/WOFF/WOFF2), and live preview.
  */
 if ( file_exists( get_template_directory() . '/inc/header-fonts.php' ) ) {
@@ -69,7 +69,6 @@ function tr199x_scripts() {
 
     wp_enqueue_script('tr199x-main', get_template_directory_uri().'/assets/js/main.js', array(), TR199X_VERSION, true);
 
-    // Comet cursor
     if ( get_theme_mod('tr199x_enable_comet', false) ) {
         if ( ! ( wp_is_mobile() && get_theme_mod('tr199x_disable_mobile_comet', true) ) ) {
             wp_enqueue_script('tr199x-comet', get_template_directory_uri().'/assets/js/comet.js', array(), TR199X_VERSION, true);
@@ -104,6 +103,10 @@ function tr199x_scripts() {
             'target'   => get_theme_mod('tr199x_hits_async_target', '#global-hit-count'),
             'delay'    => 800
         ));
+    }
+
+    if ( get_theme_mod('tr199x_enable_midi', false) ) {
+        // MIDI embed handled in footer hook
     }
 }
 add_action('wp_enqueue_scripts','tr199x_scripts');
@@ -140,7 +143,7 @@ function tr199x_customize($wp) {
     $wp->add_section('tr199x_retro', array(
         'title'=>__('Retro 199X Options','trashchurch-retro-199x'),
         'priority'=>30,
-        'description'=>__('Toggle maximal 1990s effects (marquee, comet cursor, hit counter, color scheme).','trashchurch-retro-199x')
+        'description'=>__('Toggle maximal 1990s effects (marquee, comet cursor, MIDI, hit counter, color scheme).','trashchurch-retro-199x')
     ));
 
     // Color scheme
@@ -259,6 +262,31 @@ function tr199x_customize($wp) {
         'label'=>__('Fade Opacity Down Tail','trashchurch-retro-199x'),
         'type'=>'checkbox',
         'section'=>'tr199x_retro'
+    ));
+
+    // MIDI
+    $wp->add_setting('tr199x_enable_midi', array(
+        'default'=>false,
+        'sanitize_callback'=>'rest_sanitize_boolean'
+    ));
+    $wp->add_control('tr199x_enable_midi', array(
+        'label'=>__('Enable Background MIDI (Autoplay)**','trashchurch-retro-199x'),
+        'type'=>'checkbox',
+        'section'=>'tr199x_retro',
+        'description'=>__('**Browsers may block autoplay; ensure user consent.')
+    ));
+
+    $wp->add_setting('tr199x_midi_file', array(
+        'default'=> get_template_directory_uri().'/assets/midi/theme.mid',
+        'sanitize_callback'=>'esc_url_raw'
+    ));
+    $wp->add_control(new WP_Customize_Upload_Control(
+        $wp,
+        'tr199x_midi_file',
+        array(
+            'label'=>__('MIDI File (.mid)','trashchurch-retro-199x'),
+            'section'=>'tr199x_retro'
+        )
     ));
 
     // Hit Counter
@@ -426,6 +454,15 @@ $tr199x_customizer_file = get_template_directory() . '/inc/customizer-restricted
 if ( file_exists( $tr199x_customizer_file ) ) {
     require_once $tr199x_customizer_file;
 }
+
+/* MIDI Embed */
+function tr199x_midi_embed() {
+    if ( get_theme_mod('tr199x_enable_midi', false) ) {
+        $midi = esc_url( get_theme_mod('tr199x_midi_file', get_template_directory_uri().'/assets/midi/theme.mid') );
+        echo '<div class="tr-sr">MIDI playing</div><embed src="'. $midi .'" hidden="true" autostart="true" loop="true"></embed>';
+    }
+}
+add_action('wp_footer','tr199x_midi_embed');
 
 /* Include Hit Counter System */
 if ( file_exists( get_template_directory() . '/inc/hit-counter.php' ) ) {

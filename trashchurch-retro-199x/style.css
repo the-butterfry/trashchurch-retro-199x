@@ -390,13 +390,7 @@ body.no-marquee .tr-marquee { display:none; }
   margin: 10px 0 18px;
 }
 
-/* Footer: safe grid layout (integrated)
-   Purpose:
-   - Copyright remains left
-   - Badges (GIFs) sit right on the first row
-   - "Site Hits" appears on a second row, right-aligned
-   Replaces earlier .tr-footer definitions to avoid conflicts.
-*/
+/* Footer: safe grid layout (integrated) */
 .tr-footer {
   background: var(--tr-gradient) !important;
   border: 4px ridge var(--tr-border);
@@ -407,7 +401,6 @@ body.no-marquee .tr-marquee { display:none; }
   color: var(--tr-accent-2);
   font-family: var(--tr-mono);
 
-  /* layout */
   display: grid;
   grid-template-columns: 1fr auto;
   grid-template-rows: auto auto;
@@ -460,7 +453,7 @@ body.no-marquee .tr-marquee { display:none; }
   box-shadow: 0 0 6px var(--tr-border-alt);
 }
 
-/* footer hit label styling (keeps visual consistent) */
+/* footer hit label styling */
 .tr-hit-label {
   margin: 0;
   padding: 4px 8px;
@@ -472,7 +465,7 @@ body.no-marquee .tr-marquee { display:none; }
   box-shadow: 0 0 8px var(--tr-border-alt), inset 0 0 8px #000;
 }
 
-/* Responsive: stack + center on narrow screens */
+/* Responsive footer */
 @media (max-width: 880px) {
   .tr-footer {
     grid-template-columns: 1fr;
@@ -724,11 +717,13 @@ table.retro-table td {
   margin-top:10px;
 }
 
-/* === Header UI cleanup: center site title/tagline, prefer system sans for them only === */
+/* === Header UI cleanup: distinct font vars === */
 .tr-title,
-.tr-title a,
-.tr-tagline {
+.tr-title a {
   font-family: var(--tr-header-font) !important;
+}
+.tr-tagline {
+  font-family: var(--tr-tagline-font, var(--tr-header-font)) !important;
 }
 
 .tr-title {
@@ -750,7 +745,8 @@ table.retro-table td {
   opacity: 0.95;
   margin-bottom: 0.5rem;
 }
-/* Replace the old template-scoped selector with this so the calendar template is excluded */
+
+/* Exclude calendar template from pipe frame */
 body:not(.page-template-page-teamup-calendar) .tr-teamup.tr-pipe-frame {
   padding-left: 22px;
   border-left: 4px solid var(--tr-border);
@@ -764,8 +760,7 @@ body:not(.page-template-page-teamup-calendar) .tr-teamup.tr-pipe-frame {
   }
 }
 
-/* End of file */
-/* === Additional CSS migration: header/title wrap, fonts, hamburger (appended) === */
+/* === Additional CSS migration: header/title wrap, fonts, hamburger === */
 
 /* Neutralize any @font-face named "Comic Sans MS" by mapping it to a safe local font */
 @font-face {
@@ -790,8 +785,11 @@ code, pre, .tr-mono,
 }
 
 /* Respect the header font variable if present (from header-fonts module) */
-.tr-title, .tr-title a, .tr-tagline {
+.tr-title, .tr-title a {
   font-family: var(--tr-header-font, var(--tr-font)) !important;
+}
+.tr-tagline {
+  font-family: var(--tr-tagline-font, var(--tr-header-font, var(--tr-font))) !important;
 }
 
 /* Ensure header overlay sits behind text so tagline is visible */
@@ -822,7 +820,7 @@ code, pre, .tr-mono,
   height: auto;
   max-height: 18vh;
   object-fit: contain;
-  image-rendering: pixelated; /* retro pixel look if assets are pixel art */
+  image-rendering: pixelated;
   pointer-events: none;
   user-select: none;
   transform: translateY(0);
@@ -850,11 +848,10 @@ code, pre, .tr-mono,
 }
 
 /* ---------- Mobile hamburger helper (non-destructive) ---------- */
-/* Add <span class="tr-hamburger" aria-hidden="true"></span> inside .tr-nav-toggle for these styles */
 .tr-nav-toggle {
-  position: relative; /* enable z-index */
-  z-index: 9999;      /* keep it above decorative overlays */
-  padding: 8px 12px;  /* slight padding tweak for small screens */
+  position: relative;
+  z-index: 9999;
+  padding: 8px 12px;
 }
 
 /* Draw a 3-bar hamburger if markup includes a .tr-hamburger child */
@@ -866,7 +863,6 @@ code, pre, .tr-mono,
   position: relative;
   vertical-align: middle;
   border-radius: 2px;
-  box-shadow: none;
 }
 .tr-nav-toggle .tr-hamburger::before,
 .tr-nav-toggle .tr-hamburger::after {
@@ -893,7 +889,6 @@ code, pre, .tr-mono,
 .tr-nav-toggle[aria-expanded="true"] .tr-hamburger::before { transform: translateY(8px) rotate(45deg); }
 .tr-nav-toggle[aria-expanded="true"] .tr-hamburger::after  { transform: translateY(-8px) rotate(-45deg); }
 
-/* End Additional CSS migration */
 /* Title/Tagline vertical stack inside the flanking image row */
 .tr-title-stack {
   display: flex;
@@ -905,7 +900,7 @@ code, pre, .tr-mono,
 .tr-header::before { z-index: 0 !important; }
 .tr-title, .tr-title a, .tr-tagline { position: relative; z-index: 2 !important; }
 
-/* Fix: ensure the gradient text effect applies to the anchor that holds the text and stacks above */
+/* Ensure gradient clip applies to anchor and sits above overlay */
 .tr-title a {
   display: inline-block;
   background: inherit;

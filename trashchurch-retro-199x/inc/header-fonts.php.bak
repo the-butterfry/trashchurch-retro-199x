@@ -103,7 +103,7 @@ function tr199x_get_available_header_fonts() {
     return $out;
 }
 
-/** Build @font-face CSS and :root var for a family slug (Title) */
+/** Build @font-face CSS and :root var for a family slug */
 function tr199x_build_header_font_css( $family_slug ) {
     $map = tr199x_get_header_font_families_map();
     if ( empty($family_slug) || ! isset($map[$family_slug]) ) {
@@ -127,28 +127,6 @@ function tr199x_build_header_font_css( $family_slug ) {
     return $css;
 }
 
-/** Build @font-face CSS for Tagline using its own family name */
-function tr199x_build_tagline_font_css( $family_slug ) {
-    $map = tr199x_get_header_font_families_map();
-    if ( empty($family_slug) || ! isset($map[$family_slug]) ) {
-        return '';
-    }
-    $css = "/* tr199x tagline font: {$family_slug} */\n";
-    foreach ( $map[$family_slug]['faces'] as $face ) {
-        $srcs = array();
-        if ( ! empty($face['srcs']['woff2']) ) $srcs[] = "url('{$face['srcs']['woff2']}') format('woff2')";
-        if ( ! empty($face['srcs']['woff']) )  $srcs[] = "url('{$face['srcs']['woff']}') format('woff')";
-        if ( ! empty($face['srcs']['ttf']) )   $srcs[] = "url('{$face['srcs']['ttf']}') format('truetype')";
-        if ( empty($srcs) ) continue;
-
-        $w = intval($face['weight']);
-        $s = ($face['style'] === 'italic') ? 'italic' : 'normal';
-        $src = implode(', ', $srcs);
-        $css .= "@font-face{font-family:'TR199X-Tagline';font-style:{$s};font-weight:{$w};font-display:swap;src:{$src};}\n";
-    }
-    return $css;
-}
-
 /** Build typography CSS for title/tagline from theme_mods (sizes, weights, kerning, line-height) */
 function tr199x_build_header_typography_css() {
     // Title defaults match theme CSS
@@ -166,7 +144,7 @@ function tr199x_build_header_typography_css() {
 
     $css  = ".tr-title{font-weight:{$t_weight};letter-spacing:{$t_ls}px;line-height:{$t_lh};font-size:clamp({$t_min}rem, {$t_vw}vw, {$t_max}rem);}";
 
-    // Only typographic properties for tagline; color/effects remain in theme CSS
+    // Keep color/text effects from theme; only override typographic properties
     $css .= ".tr-tagline{font-weight:{$g_weight};letter-spacing:{$g_ls}px;font-size:{$g_fs_px}px;}";
 
     return $css;
@@ -176,20 +154,18 @@ function tr199x_build_header_typography_css() {
 function tr199x_header_font_inline_css() {
     $styles = '';
 
-    // Title font family selection
-    $selected_header = get_theme_mod('tr199x_header_font_family', '');
-    if ( $selected_header ) {
-        $fcss = tr199x_build_header_font_css( $selected_header );
+    // Font family selection
+    $selected = get_theme_mod('tr199x_header_font_family', '');
+    if ( $selected ) {
+        $fcss = tr199x_build_header_font_css( $selected );
         if ( $fcss ) $styles .= $fcss . "\n";
     }
 
-    // Tagline font family selection (same picker as title, separate setting)
-    $selected_tagline = get_theme_mod('tr199x_header_tagline_font_family', '');
-    if ( $selected_tagline ) {
-        $gcss = tr199x_build_tagline_font_css( $selected_tagline );
-        if ( $gcss ) $styles .= $gcss . "\n";
-        // Set CSS variable to use the tagline family; fallback to header variable
-        $styles .= ":root{--tr-tagline-font:'TR199X-Tagline', var(--tr-header-font);}\n";
+    // Tagline font stack -> CSS variable
+    $tagline_stack = get_theme_mod( 'tr199x_header_tagline_font_family', '' );
+    if ( $tagline_stack ) {
+        // Safe to inject: value is sanitized in the Customizer setting
+        $styles .= ":root{--tr-tagline-font:{$tagline_stack};}\n";
     }
 
     // Typography overrides (always safe; defaults match theme)
@@ -209,6 +185,18 @@ function tr199x_sanitize_header_font_family( $slug ) {
     return array_key_exists($slug, $choices) ? $slug : '';
 }
 
+/**
+ * Sanitize a CSS font-family stack for tagline.
+ * Allows letters, numbers, spaces, commas, hyphens, and double quotes.
+ */
+if ( ! function_exists( 'tr199x_sanitize_font_stack' ) ) {
+    function tr199x_sanitize_font_stack( $v ) {
+        $v = (string) $v;
+        $v = preg_replace( '/[^a-zA-Z0-9 ,\\-"]/u', '', $v );
+        return trim( $v );
+    }
+}
+
 function tr199x_customize_header_font( $wp ) {
     $section = 'tr199x_retro';
     // If section not available yet, fallback
@@ -218,7 +206,6 @@ function tr199x_customize_header_font( $wp ) {
 
     $font_choices = array( '' => __('System Sans (default)', 'trashchurch-retro-199x') ) + tr199x_get_available_header_fonts();
 
-    // Title font select
     $wp->add_setting('tr199x_header_font_family', array(
         'default'           => '',
         'sanitize_callback' => 'tr199x_sanitize_header_font_family',
@@ -232,19 +219,18 @@ function tr199x_customize_header_font( $wp ) {
         'description' => __('Auto-discovers .woff2/.woff/.ttf in assets/fonts. Use filenames like Family-BoldItalic.woff2', 'trashchurch-retro-199x')
     ));
 
-    // NEW: Tagline font select (same choices)
-    $wp->add_setting('tr199x_header_tagline_font_family', array(
+    // NEW: Tagline font family (CSS stack)
+    $wp->add_setting( 'tr199x_header_tagline_font_family', array(
         'default'           => '',
-        'sanitize_callback' => 'tr199x_sanitize_header_font_family',
+        'sanitize_callback' => 'tr199x_sanitize_font_stack',
         'transport'         => 'postMessage',
-    ));
-    $wp->add_control('tr199x_header_tagline_font_family', array(
-        'label'       => __('Tagline Font','trashchurch-retro-199x'),
-        'type'        => 'select',
+    ) );
+    $wp->add_control( 'tr199x_header_tagline_font_family', array(
+        'label'       => __( 'Tagline Font Family (CSS stack)', 'trashchurch-retro-199x' ),
+        'description' => __( 'Example: "Gill Sans", "Helvetica Neue", Arial, sans-serif', 'trashchurch-retro-199x' ),
+        'type'        => 'text',
         'section'     => $section,
-        'choices'     => $font_choices,
-        'description' => __('Optional: choose a different font for the tagline. Leave blank to inherit Header Font.', 'trashchurch-retro-199x')
-    ));
+    ) );
 
     // Typography controls
 
@@ -404,35 +390,11 @@ function tr199x_customize_preview_assets() {
         )
     ));
 
-    // Live: update tagline font family using same picker, inject @font-face and swap CSS var
+    // Live update the --tr-tagline-font CSS var when editing in Customizer
     if ( function_exists('wp_add_inline_script') ) {
         wp_add_inline_script(
             'tr199x-customize-preview',
-            '(function(api){' .
-              'function buildTaglineCss(slug){' .
-                'var fam = (window.TR199X_FONTMAP||{})[slug]; if(!fam){return "";}' .
-                'var css = "/* tr199x tagline font: "+slug+" */\\n";' .
-                'if(Array.isArray(fam.faces)){' .
-                  'fam.faces.forEach(function(face){' .
-                    'var srcs=[]; if(face.srcs&&face.srcs.woff2){srcs.push("url(\'"+face.srcs.woff2+"\') format(\'woff2\')");}' .
-                    'if(face.srcs&&face.srcs.woff){srcs.push("url(\'"+face.srcs.woff+"\') format(\'woff\')");}' .
-                    'if(face.srcs&&face.srcs.ttf){srcs.push("url(\'"+face.srcs.ttf+"\') format(\'truetype\')");}' .
-                    'if(!srcs.length){return;}' .
-                    'var w = parseInt(face.weight||400,10); var s = (face.style==="italic")?"italic":"normal";' .
-                    'css += "@font-face{font-family:\'TR199X-Tagline\';font-style:"+s+";font-weight:"+w+";font-display:swap;src:"+srcs.join(", ")+";}\\n";' .
-                  '});' .
-                '}' .
-                'return css;' .
-              '}' .
-              'function ensureStyleEl(){var el=document.getElementById("tr199x-tagline-font-style"); if(!el){el=document.createElement("style"); el.id="tr199x-tagline-font-style"; document.head.appendChild(el);} return el;}' .
-              'api("tr199x_header_tagline_font_family", function(value){' .
-                'value.bind(function(v){' .
-                  'var el = ensureStyleEl();' .
-                  'if(v){ el.textContent = buildTaglineCss(v); document.documentElement.style.setProperty("--tr-tagline-font", "\'TR199X-Tagline\', var(--tr-header-font)"); }' .
-                  'else { el.textContent = ""; document.documentElement.style.setProperty("--tr-tagline-font", ""); }' .
-                '});' .
-              '});' .
-            '})(wp.customize);'
+            '(function(api){api("tr199x_header_tagline_font_family",function(value){value.bind(function(v){document.documentElement.style.setProperty("--tr-tagline-font", v || "");});});})(wp.customize);'
         );
     }
 }
