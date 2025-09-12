@@ -3,7 +3,7 @@ Theme Name: TrashChurch Retro 199X
 Theme URI: https://example.com/trashchurch-retro-199x
 Author: the-butterfry
 Author URI: https://github.com/the-butterfry
-Description: Maximalist late 1990s geocities/angelfire style with marquee, comet cursor, tiled GIFs, MIDI (optional), retro hit counter (global + per-post), digit GIF sprites. Fully responsive + ac[...]
+Description: Maximalist late 1990s geocities/angelfire style with marquee, comet cursor, tiled GIFs, MIDI (optional), retro hit counter (global + per-post), digit GIF sprites. Fully responsive + accessibility-ready + retro fun.
 Version: 0.2.3
 License: GPL-2.0-or-later
 Text Domain: trashchurch-retro-199x
@@ -904,14 +904,3 @@ code, pre, .tr-mono,
 /* Strong ordering so overlay cannot cover title/tagline */
 .tr-header::before { z-index: 0 !important; }
 .tr-title, .tr-title a, .tr-tagline { position: relative; z-index: 2 !important; }
-
-/* Fix: ensure the gradient text effect applies to the anchor that holds the text and stacks above */
-.tr-title a {
-  display: inline-block;
-  background: inherit;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent !important;
-  position: relative;
-  z-index: 3 !important;
-}
