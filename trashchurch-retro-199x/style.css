@@ -910,3 +910,115 @@ code, pre, .tr-mono,
   position: relative;
   z-index: 3 !important;
 }
+/* === Additional CSS migration (final overrides) === */
+/* 1) Neutralize any @font-face named "Comic Sans MS" */
+@font-face {
+  font-family: "Comic Sans MS";
+  src: local("Arial");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+/* 2) Defensive site-wide stack (then immediately restore known mono/header uses) */
+*,
+*::before,
+*::after {
+  font-family: var(--tr-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
+}
+
+/* Restore areas that must stay monospace or custom */
+code, pre, .tr-mono,
+.tr-nav li a, .tr-sidebar .widget-title {
+  font-family: var(--tr-mono) !important;
+}
+
+/* Respect the header font variable if present (from header-fonts module) */
+.tr-title, .tr-title a {
+  font-family: var(--tr-header-font, var(--tr-font)) !important;
+}
+.tr-tagline {
+  font-family: var(--tr-tagline-font, var(--tr-header-font, var(--tr-font))) !important;
+}
+
+/* 3) Title/tagline alignment: tagline to bottom-right of title, drop 5px */
+.tr-title-stack {
+  /* Override earlier column stack so title and tagline sit on one line */
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;     /* bottom-align the tagline to the title */
+  justify-content: center;   /* preserve centered group within the header */
+  gap: 10px;
+}
+
+.tr-title {
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+.tr-tagline {
+  margin: 0 0 0 10px;        /* space to the right of the title */
+  text-align: right;
+  white-space: nowrap;
+  transform: translateY(5px);/* drop by 5px */
+  opacity: 0.95;             /* matches existing style */
+}
+
+/* Small screens: stack and center again */
+@media (max-width: 480px) {
+  .tr-title-stack {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .tr-tagline {
+    transform: none;
+    margin: 6px 0 0 0;
+    text-align: center;
+    white-space: normal;
+  }
+}
+
+/* 4) Mobile hamburger helper (safe if .tr-hamburger exists; no-op if not) */
+.tr-nav-toggle {
+  position: relative;  /* z-index works reliably */
+  z-index: 9999;       /* ensure above decorative overlays */
+  padding: 8px 12px;   /* avoid squashing */
+}
+.tr-nav-toggle .tr-hamburger {
+  display: inline-block;
+  width: 26px;
+  height: 2px;
+  background: currentColor;
+  position: relative;
+  vertical-align: middle;
+  border-radius: 2px;
+}
+.tr-nav-toggle .tr-hamburger::before,
+.tr-nav-toggle .tr-hamburger::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+}
+.tr-nav-toggle .tr-hamburger::before { top: -8px; }
+.tr-nav-toggle .tr-hamburger::after  { top: 8px; }
+@media (max-width: 980px) {
+  .tr-nav-toggle { display: block; color: var(--tr-accent); }
+}
+@media (min-width: 981px) {
+  .tr-nav-toggle .tr-hamburger { display: none; }
+}
+.tr-nav-toggle[aria-expanded="true"] .tr-hamburger { background: transparent; }
+.tr-nav-toggle[aria-expanded="true"] .tr-hamburger::before { transform: translateY(8px) rotate(45deg); }
+.tr-nav-toggle[aria-expanded="true"] .tr-hamburger::after  { transform: translateY(-8px) rotate(-45deg); }
+/* Header logo images: remove all decorative framing for full transparency */
+.tr-title-img {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}

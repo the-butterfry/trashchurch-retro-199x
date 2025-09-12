@@ -1,18 +1,16 @@
 <?php
 /**
  * TrashChurch Retro 199X Functions
- * Version 0.2.0 (Adds Hit Counter system)
+ * Version 0.3.7
  *
  * Integrated:
  * - Optional Customizer include for selecting restricted pages (inc/customizer-restricted-pages.php)
  * - Helpers to read restricted page IDs from Customizer/theme_mod (supports legacy key 'tc_restricted_pages')
  * - template_redirect hook to send non-logged-in visitors to wp-login.php for selected pages
- *
- * Notes:
- * - This file is defensive: it checks for function existence and only requires the customizer file if present.
- * - Version constant set to 0.3.7 as requested.
+ * - Hit Counter system (inc/hit-counter.php)
+ * - Teamup Calendar integration (inc/teamup-calendar.php)
  */
- 
+
 if ( ! defined('TR199X_VERSION') ) {
     define('TR199X_VERSION', '0.3.7');
 }
@@ -71,21 +69,23 @@ function tr199x_scripts() {
 
     // Comet cursor
     if ( get_theme_mod('tr199x_enable_comet', false) ) {
-        if ( ! ( wp_is_mobile() && get_theme_mod('tr199x_disable_mobile_comet', true) ) ) {
-            wp_enqueue_script('tr199x-comet', get_template_directory_uri().'/assets/js/comet.js', array(), TR199X_VERSION, true);
-            $count = (int) get_theme_mod('tr199x_comet_count', 10);
-            $count = max(1, min(40,$count));
-            $smooth = (float) get_theme_mod('tr199x_comet_smooth', 0.25);
-            $smooth = max(0.05, min(0.9,$smooth));
-            $img = esc_url( get_theme_mod('tr199x_comet_image', get_template_directory_uri().'/assets/img/comet.png') );
-            $fade = (bool) get_theme_mod('tr199x_comet_fade', true);
-            wp_localize_script('tr199x-comet','TR199X_COMET', array(
-                'count'=>$count,
-                'smooth'=>$smooth,
-                'image'=>$img,
-                'fade'=>$fade
-            ));
-        }
+        wp_enqueue_script('tr199x-comet', get_template_directory_uri().'/assets/js/comet.js', array(), TR199X_VERSION, true);
+
+        $count  = max(1, min(40, (int) get_theme_mod('tr199x_comet_count', 10)));
+        $smooth = max(0.05, min(0.9, (float) get_theme_mod('tr199x_comet_smooth', 0.25)));
+        $img    = esc_url( get_theme_mod('tr199x_comet_image', get_template_directory_uri().'/assets/img/comet.png') );
+        $fade   = (bool) get_theme_mod('tr199x_comet_fade', true);
+
+        // Pass whether coarse pointers should be allowed based on the Customizer toggle
+        $allow_coarse = ! get_theme_mod('tr199x_disable_mobile_comet', true);
+
+        wp_localize_script('tr199x-comet','TR199X_COMET', array(
+            'count'       => $count,
+            'smooth'      => $smooth,
+            'image'       => $img,
+            'fade'        => $fade,
+            'allowCoarse' => $allow_coarse,
+        ));
     }
 
     // Async Hit Counter (optional)
@@ -544,7 +544,7 @@ if ( ! function_exists( 'tr199x_restrict_pages_to_wp_login' ) ) {
             // Try to resolve slug to page ID for canonical permalink
             $target = null;
             $matched_slug = in_array( $request_path, $restricted_slugs, true ) ? $request_path : $first_segment;
-            
+
             foreach ( $restricted_ids as $id ) {
                 $post = get_post( $id );
                 if ( $post && $post->post_name === $matched_slug ) {
@@ -552,17 +552,17 @@ if ( ! function_exists( 'tr199x_restrict_pages_to_wp_login' ) ) {
                     break;
                 }
             }
-            
+
             // Fallback to home_url if couldn't resolve to page ID
             if ( ! $target ) {
                 $target = home_url( '/' . ltrim( $request_path, '/' ) );
             }
-            
+
             // Preserve current query string
             if ( ! empty( $_SERVER['QUERY_STRING'] ) ) {
                 $target = add_query_arg( $_GET, $target );
             }
-            
+
             wp_safe_redirect( wp_login_url( $target ) );
             exit;
         }
@@ -605,12 +605,12 @@ if ( ! function_exists( 'tr199x_login_redirect_to_requested_page' ) ) {
         if ( is_wp_error( $user ) ) {
             return $redirect_to;
         }
-        
+
         // Prefer the requested redirect_to value when present
         if ( ! empty( $request ) && wp_validate_redirect( $request ) ) {
             return $request;
         }
-        
+
         return $redirect_to;
     }
     add_filter( 'login_redirect', 'tr199x_login_redirect_to_requested_page', 10, 3 );

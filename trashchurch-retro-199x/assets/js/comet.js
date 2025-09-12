@@ -1,8 +1,13 @@
 // Comet image trail (cursor follower)
 (function(){
   if (typeof TR199X_COMET === 'undefined') return;
-  if (window.matchMedia('(pointer: coarse)').matches) return;
+
+  // Respect reduced motion
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  // NEW: allow coarse pointers when allowCoarse=true, otherwise bail
+  var allowCoarse = (typeof TR199X_COMET.allowCoarse !== 'undefined') ? !!TR199X_COMET.allowCoarse : false;
+  if (!allowCoarse && window.matchMedia('(pointer: coarse)').matches) return;
 
   const count = Math.min(Math.max(TR199X_COMET.count || 10,1),40);
   const smooth = TR199X_COMET.smooth || 0.25;
