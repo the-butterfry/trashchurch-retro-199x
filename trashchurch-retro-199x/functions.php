@@ -10,11 +10,11 @@
  *
  * Notes:
  * - This file is defensive: it checks for function existence and only requires the customizer file if present.
- * - Version constant set to 0.3.6 as requested.
+ * - Version constant set to 0.3.7 as requested.
  */
  
 if ( ! defined('TR199X_VERSION') ) {
-    define('TR199X_VERSION', '0.3.6');
+    define('TR199X_VERSION', '0.3.7');
 }
 
 if ( file_exists( get_template_directory() . '/inc/login-branding.php' ) ) {
