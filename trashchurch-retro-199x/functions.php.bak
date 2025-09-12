@@ -16,19 +16,11 @@
 if ( ! defined('TR199X_VERSION') ) {
     define('TR199X_VERSION', '0.3.5');
 }
-
+ 
 if ( file_exists( get_template_directory() . '/inc/login-branding.php' ) ) {
     require_once get_template_directory() . '/inc/login-branding.php';
 }
-
-/**
- * NEW: Optional header-fonts include (safe; only loads if present)
- * - Provides Customizer control, @font-face injection (TTF/WOFF/WOFF2), and live preview.
- */
-if ( file_exists( get_template_directory() . '/inc/header-fonts.php' ) ) {
-    require_once get_template_directory() . '/inc/header-fonts.php';
-}
-
+ 
 function tr199x_setup() {
     add_theme_support('title-tag');
     add_theme_support('post-thumbnails');
@@ -45,13 +37,13 @@ function tr199x_setup() {
     add_theme_support('html5', array(
         'search-form','comment-form','comment-list','gallery','caption','style','script'
     ));
-
+ 
     register_nav_menus(array(
         'primary' => __('Primary Menu', 'trashchurch-retro-199x')
     ));
 }
 add_action('after_setup_theme','tr199x_setup');
-
+ 
 function tr199x_widgets_init() {
     register_sidebar(array(
         'name'          => __('Retro Sidebar','trashchurch-retro-199x'),
@@ -63,12 +55,12 @@ function tr199x_widgets_init() {
     ));
 }
 add_action('widgets_init','tr199x_widgets_init');
-
+ 
 function tr199x_scripts() {
     wp_enqueue_style('tr199x-style', get_stylesheet_uri(), array(), TR199X_VERSION);
-
+ 
     wp_enqueue_script('tr199x-main', get_template_directory_uri().'/assets/js/main.js', array(), TR199X_VERSION, true);
-
+ 
     if ( get_theme_mod('tr199x_enable_comet', false) ) {
         if ( ! ( wp_is_mobile() && get_theme_mod('tr199x_disable_mobile_comet', true) ) ) {
             wp_enqueue_script('tr199x-comet', get_template_directory_uri().'/assets/js/comet.js', array(), TR199X_VERSION, true);
@@ -86,7 +78,7 @@ function tr199x_scripts() {
             ));
         }
     }
-
+ 
     // Async Hit Counter (optional)
     if ( get_theme_mod('tr199x_enable_hit_counter', true ) && get_theme_mod('tr199x_hits_async', false ) ) {
         wp_enqueue_script(
@@ -104,13 +96,13 @@ function tr199x_scripts() {
             'delay'    => 800
         ));
     }
-
+ 
     if ( get_theme_mod('tr199x_enable_midi', false) ) {
         // MIDI embed handled in footer hook
     }
 }
 add_action('wp_enqueue_scripts','tr199x_scripts');
-
+ 
 function tr199x_body_classes( $classes ) {
     if ( get_theme_mod('tr199x_disable_tile', false) ) $classes[] = 'tr-no-tile';
     if ( get_theme_mod('tr199x_pixel_bg', false) ) $classes[] = 'pixelated-bg';
@@ -120,13 +112,13 @@ function tr199x_body_classes( $classes ) {
     return $classes;
 }
 add_filter('body_class','tr199x_body_classes');
-
+ 
 function tr199x_excerpt_more( $more ) {
     if ( is_admin() ) return $more;
     return ' …';
 }
 add_filter('excerpt_more','tr199x_excerpt_more');
-
+ 
 function tr199x_allow_marquee( $tags ) {
     $tags['marquee'] = array(
         'behavior'=>true,'direction'=>true,'scrollamount'=>true,'scrolldelay'=>true,
@@ -136,16 +128,16 @@ function tr199x_allow_marquee( $tags ) {
     return $tags;
 }
 add_filter('wp_kses_allowed_html','tr199x_allow_marquee',10,1);
-
+ 
 /* Customizer */
 function tr199x_customize($wp) {
-
+ 
     $wp->add_section('tr199x_retro', array(
         'title'=>__('Retro 199X Options','trashchurch-retro-199x'),
         'priority'=>30,
         'description'=>__('Toggle maximal 1990s effects (marquee, comet cursor, MIDI, hit counter, color scheme).','trashchurch-retro-199x')
     ));
-
+ 
     // Color scheme
     $wp->add_setting('tr199x_color_scheme', array(
         'default'=>'default',
@@ -164,7 +156,7 @@ function tr199x_customize($wp) {
             'magenta'=>'Purple/Magenta'
         )
     ));
-
+ 
     // Marquee
     $wp->add_setting('tr199x_enable_marquee', array(
         'default'=>false,
@@ -175,7 +167,7 @@ function tr199x_customize($wp) {
         'type'=>'checkbox',
         'section'=>'tr199x_retro'
     ));
-
+ 
     $wp->add_setting('tr199x_marquee_text', array(
         'default'=>__('WELCOME TO THE TRASHCHURCH RETRO 199X PORTAL! ADJUST EFFECTS IN CUSTOMIZER!','trashchurch-retro-199x'),
         'sanitize_callback'=>'sanitize_text_field'
@@ -185,7 +177,7 @@ function tr199x_customize($wp) {
         'type'=>'text',
         'section'=>'tr199x_retro'
     ));
-
+ 
     $wp->add_setting('tr199x_marquee_speed', array(
         'default'=>10,
         'sanitize_callback'=>'absint'
@@ -196,7 +188,7 @@ function tr199x_customize($wp) {
         'section'=>'tr199x_retro',
         'input_attrs'=>array('min'=>1,'max'=>40)
     ));
-
+ 
     // Comet cursor
     $wp->add_setting('tr199x_enable_comet', array(
         'default'=>false,
@@ -207,7 +199,7 @@ function tr199x_customize($wp) {
         'type'=>'checkbox',
         'section'=>'tr199x_retro'
     ));
-
+ 
     $wp->add_setting('tr199x_disable_mobile_comet', array(
         'default'=>true,
         'sanitize_callback'=>'rest_sanitize_boolean'
@@ -217,7 +209,7 @@ function tr199x_customize($wp) {
         'type'=>'checkbox',
         'section'=>'tr199x_retro'
     ));
-
+ 
     $wp->add_setting('tr199x_comet_image', array(
         'default'=> get_template_directory_uri().'/assets/img/comet.png',
         'sanitize_callback'=>'esc_url_raw'
@@ -231,7 +223,7 @@ function tr199x_customize($wp) {
             'settings'=>'tr199x_comet_image'
         )
     ));
-
+ 
     $wp->add_setting('tr199x_comet_count', array(
         'default'=>10,
         'sanitize_callback'=>'absint'
@@ -242,7 +234,7 @@ function tr199x_customize($wp) {
         'section'=>'tr199x_retro',
         'input_attrs'=>array('min'=>1,'max'=>40)
     ));
-
+ 
     $wp->add_setting('tr199x_comet_smooth', array(
         'default'=>0.25,
         'sanitize_callback'=>function($v){ return (float)$v; }
@@ -253,7 +245,7 @@ function tr199x_customize($wp) {
         'section'=>'tr199x_retro',
         'input_attrs'=>array('min'=>0.05,'max'=>0.9,'step'=>0.01)
     ));
-
+ 
     $wp->add_setting('tr199x_comet_fade', array(
         'default'=>true,
         'sanitize_callback'=>'rest_sanitize_boolean'
@@ -263,7 +255,7 @@ function tr199x_customize($wp) {
         'type'=>'checkbox',
         'section'=>'tr199x_retro'
     ));
-
+ 
     // MIDI
     $wp->add_setting('tr199x_enable_midi', array(
         'default'=>false,
@@ -275,7 +267,7 @@ function tr199x_customize($wp) {
         'section'=>'tr199x_retro',
         'description'=>__('**Browsers may block autoplay; ensure user consent.')
     ));
-
+ 
     $wp->add_setting('tr199x_midi_file', array(
         'default'=> get_template_directory_uri().'/assets/midi/theme.mid',
         'sanitize_callback'=>'esc_url_raw'
@@ -288,7 +280,7 @@ function tr199x_customize($wp) {
             'section'=>'tr199x_retro'
         )
     ));
-
+ 
     // Hit Counter
     $wp->add_setting('tr199x_enable_hit_counter', array(
         'default'=>true,
@@ -299,7 +291,7 @@ function tr199x_customize($wp) {
         'type'=>'checkbox',
         'section'=>'tr199x_retro'
     ));
-
+ 
     $wp->add_setting('tr199x_hits_increment_on_load', array(
         'default'=>true,
         'sanitize_callback'=>'rest_sanitize_boolean'
@@ -309,7 +301,7 @@ function tr199x_customize($wp) {
         'type'=>'checkbox',
         'section'=>'tr199x_retro'
     ));
-
+ 
     $wp->add_setting('tr199x_hits_async', array(
         'default'=>false,
         'sanitize_callback'=>'rest_sanitize_boolean'
@@ -319,7 +311,7 @@ function tr199x_customize($wp) {
         'type'=>'checkbox',
         'section'=>'tr199x_retro'
     ));
-
+ 
     $wp->add_setting('tr199x_hits_async_target', array(
         'default'=>'#global-hit-count',
         'sanitize_callback'=>'sanitize_text_field'
@@ -329,7 +321,7 @@ function tr199x_customize($wp) {
         'type'=>'text',
         'section'=>'tr199x_retro'
     ));
-
+ 
     $wp->add_setting('tr199x_hits_ignore_logged_in', array(
         'default'=>true,
         'sanitize_callback'=>'rest_sanitize_boolean'
@@ -339,7 +331,7 @@ function tr199x_customize($wp) {
         'type'=>'checkbox',
         'section'=>'tr199x_retro'
     ));
-
+ 
     $wp->add_setting('tr199x_hits_ignore_author', array(
         'default'=>true,
         'sanitize_callback'=>'rest_sanitize_boolean'
@@ -349,7 +341,7 @@ function tr199x_customize($wp) {
         'type'=>'checkbox',
         'section'=>'tr199x_retro'
     ));
-
+ 
     $wp->add_setting('tr199x_hits_ignore_bots', array(
         'default'=>true,
         'sanitize_callback'=>'rest_sanitize_boolean'
@@ -359,7 +351,7 @@ function tr199x_customize($wp) {
         'type'=>'checkbox',
         'section'=>'tr199x_retro'
     ));
-
+ 
     $wp->add_setting('tr199x_hits_unique_session', array(
         'default'=>false,
         'sanitize_callback'=>'rest_sanitize_boolean'
@@ -369,7 +361,7 @@ function tr199x_customize($wp) {
         'type'=>'checkbox',
         'section'=>'tr199x_retro'
     ));
-
+ 
     $wp->add_setting('tr199x_hits_retro_digits', array(
         'default'=>true,
         'sanitize_callback'=>'rest_sanitize_boolean'
@@ -379,7 +371,7 @@ function tr199x_customize($wp) {
         'type'=>'checkbox',
         'section'=>'tr199x_retro'
     ));
-
+ 
     $wp->add_setting('tr199x_hits_label', array(
         'default'=>'Site Hits:',
         'sanitize_callback'=>'sanitize_text_field'
@@ -389,7 +381,7 @@ function tr199x_customize($wp) {
         'type'=>'text',
         'section'=>'tr199x_retro'
     ));
-
+ 
     $wp->add_setting('tr199x_post_hits_label', array(
         'default'=>'Views:',
         'sanitize_callback'=>'sanitize_text_field'
@@ -399,7 +391,7 @@ function tr199x_customize($wp) {
         'type'=>'text',
         'section'=>'tr199x_retro'
     ));
-
+ 
     // Under construction ribbon
     $wp->add_setting('tr199x_under_construction', array(
         'default'=>true,
@@ -410,7 +402,7 @@ function tr199x_customize($wp) {
         'type'=>'checkbox',
         'section'=>'tr199x_retro'
     ));
-
+ 
     // Footer badges
     $wp->add_setting('tr199x_show_badges', array(
         'default'=>true,
@@ -421,7 +413,7 @@ function tr199x_customize($wp) {
         'type'=>'checkbox',
         'section'=>'tr199x_retro'
     ));
-
+ 
     // Disable tile
     $wp->add_setting('tr199x_disable_tile', array(
         'default'=>false,
@@ -432,7 +424,7 @@ function tr199x_customize($wp) {
         'type'=>'checkbox',
         'section'=>'tr199x_retro'
     ));
-
+ 
     // Pixelate tile
     $wp->add_setting('tr199x_pixel_bg', array(
         'default'=>false,
@@ -445,7 +437,7 @@ function tr199x_customize($wp) {
     ));
 }
 add_action('customize_register','tr199x_customize');
-
+ 
 /* If an optional Customizer helper exists, include it. This file (inc/customizer-restricted-pages.php)
  * provides a multi-select pages control and stores a theme_mod (key: 'tr199x_restricted_pages' by default).
  * The file is optional — include only when present to avoid fatal errors.
@@ -454,7 +446,7 @@ $tr199x_customizer_file = get_template_directory() . '/inc/customizer-restricted
 if ( file_exists( $tr199x_customizer_file ) ) {
     require_once $tr199x_customizer_file;
 }
-
+ 
 /* MIDI Embed */
 function tr199x_midi_embed() {
     if ( get_theme_mod('tr199x_enable_midi', false) ) {
@@ -463,29 +455,29 @@ function tr199x_midi_embed() {
     }
 }
 add_action('wp_footer','tr199x_midi_embed');
-
+ 
 /* Include Hit Counter System */
 if ( file_exists( get_template_directory() . '/inc/hit-counter.php' ) ) {
     require_once get_template_directory() . '/inc/hit-counter.php';
 }
-
+ 
 /* Teamup Calendar integration */
 if ( file_exists( get_template_directory() . '/inc/teamup-calendar.php' ) ) {
     require_once get_template_directory() . '/inc/teamup-calendar.php';
 }
-
+ 
 function tr_enqueue_teamup_styles() {
   wp_enqueue_style( 'tr-teamup', get_template_directory_uri() . '/assets/css/teamup.css', array(), '1.0' );
 }
 add_action( 'wp_enqueue_scripts', 'tr_enqueue_teamup_styles' );
-
+ 
 /* ------------------------------------------------------------------
  * Restricted pages support + redirect logic
  * - Reads selection from theme_mod 'tr199x_restricted_pages'
  * - Also accepts legacy 'tc_restricted_pages' theme_mod or site option 'tc_restricted_pages'
  * - Safe: wrapped in function_exists guards and skips admin/REST/AJAX contexts
  * ------------------------------------------------------------------ */
-
+ 
 if ( ! function_exists( 'tr199x_get_restricted_page_ids' ) ) {
     /**
      * Return array of restricted page IDs (ints).
@@ -501,34 +493,34 @@ if ( ! function_exists( 'tr199x_get_restricted_page_ids' ) ) {
     function tr199x_get_restricted_page_ids() {
         // Primary (theme Mod set via customizer include): tr199x_restricted_pages
         $raw = get_theme_mod( 'tr199x_restricted_pages', '' );
-
+ 
         // Fallback: legacy theme_mod used by earlier snippets (tc_restricted_pages)
         if ( empty( $raw ) ) {
             $raw = get_theme_mod( 'tc_restricted_pages', '' );
         }
-
+ 
         // Fallback: option (used by mu-plugin migration or site-wide storage)
         if ( empty( $raw ) ) {
             $raw = get_option( 'tc_restricted_pages', '' );
         }
-
+ 
         if ( empty( $raw ) ) {
             return array();
         }
-
+ 
         if ( is_array( $raw ) ) {
             $ids = $raw;
         } else {
             $ids = array_filter( array_map( 'trim', explode( ',', (string) $raw ) ) );
         }
-
+ 
         $ids = array_map( 'absint', $ids );
         $ids = array_filter( $ids );
-
+ 
         return $ids;
     }
 }
-
+ 
 if ( ! function_exists( 'tr199x_restrict_pages_to_wp_login' ) ) {
     add_action( 'template_redirect', 'tr199x_restrict_pages_to_wp_login', 1 );
     /**
@@ -539,28 +531,29 @@ if ( ! function_exists( 'tr199x_restrict_pages_to_wp_login' ) ) {
         if ( is_admin() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() ) ) {
             return;
         }
-
+ 
         // Allow logged-in users
         if ( is_user_logged_in() ) {
             return;
         }
-
+ 
         $restricted_ids = tr199x_get_restricted_page_ids();
         if ( empty( $restricted_ids ) ) {
             return;
         }
-
+ 
         // 1) Prefer WP-aware check by ID (is_page accepts array of IDs)
         if ( is_page( $restricted_ids ) ) {
+            // Use canonical permalink and preserve query string
             $target = get_permalink();
-            // Preserve current query string
-            if ( ! empty( $_SERVER['QUERY_STRING'] ) ) {
-                $target = add_query_arg( $_GET, $target );
+            $qs = isset( $_SERVER['QUERY_STRING'] ) ? (string) $_SERVER['QUERY_STRING'] : '';
+            if ( $qs !== '' ) {
+                $target .= ( strpos( $target, '?' ) === false ? '?' : '&' ) . $qs;
             }
             wp_safe_redirect( wp_login_url( $target ) );
             exit;
         }
-
+ 
         // 2) Fallback: match the request URI path to selected pages' slugs
         $request_path = trim( parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH ), '/' );
         $home_path    = trim( parse_url( home_url(), PHP_URL_PATH ), '/' );
@@ -568,42 +561,43 @@ if ( ! function_exists( 'tr199x_restrict_pages_to_wp_login' ) ) {
             $request_path = ltrim( substr( $request_path, strlen( $home_path ) ), '/' );
         }
         $first_segment = strtok( $request_path, '/' );
-
+ 
         $restricted_slugs = array();
+        $slug_to_id       = array();
         foreach ( $restricted_ids as $id ) {
             $post = get_post( $id );
             if ( $post && ! empty( $post->post_name ) ) {
                 $restricted_slugs[] = $post->post_name;
+                $slug_to_id[ $post->post_name ] = (int) $id;
             }
         }
-
-        if ( in_array( $request_path, $restricted_slugs, true ) || ( $first_segment && in_array( $first_segment, $restricted_slugs, true ) ) ) {
-            // Try to resolve slug to page ID for canonical permalink
-            $target = null;
-            $matched_slug = in_array( $request_path, $restricted_slugs, true ) ? $request_path : $first_segment;
-            
-            foreach ( $restricted_ids as $id ) {
-                $post = get_post( $id );
-                if ( $post && $post->post_name === $matched_slug ) {
-                    $target = get_permalink( $id );
-                    break;
-                }
-            }
-            
-            // Fallback to home_url if couldn't resolve to page ID
-            if ( ! $target ) {
+ 
+        // Determine which slug matched (full path or first segment)
+        $matched_slug = null;
+        if ( in_array( $request_path, $restricted_slugs, true ) ) {
+            $matched_slug = $request_path;
+        } elseif ( $first_segment && in_array( $first_segment, $restricted_slugs, true ) ) {
+            $matched_slug = $first_segment;
+        }
+ 
+        if ( $matched_slug !== null ) {
+            $qs = isset( $_SERVER['QUERY_STRING'] ) ? (string) $_SERVER['QUERY_STRING'] : '';
+ 
+            // Prefer a canonical permalink if we can resolve the ID; otherwise build from home_url()
+            $matched_id = isset( $slug_to_id[ $matched_slug ] ) ? (int) $slug_to_id[ $matched_slug ] : 0;
+            if ( $matched_id ) {
+                $target = get_permalink( $matched_id );
+            } else {
                 $target = home_url( '/' . ltrim( $request_path, '/' ) );
             }
-            
-            // Preserve current query string
-            if ( ! empty( $_SERVER['QUERY_STRING'] ) ) {
-                $target = add_query_arg( $_GET, $target );
+            if ( $qs !== '' ) {
+                $target .= ( strpos( $target, '?' ) === false ? '?' : '&' ) . $qs;
             }
-            
+ 
             wp_safe_redirect( wp_login_url( $target ) );
             exit;
         }
-
+ 
         // Optional debug trace for developers (only when WP_DEBUG)
         if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
             $queried = get_queried_object();
@@ -619,38 +613,16 @@ if ( ! function_exists( 'tr199x_restrict_pages_to_wp_login' ) ) {
         }
     }
 }
-
-/* ------------------------------------------------------------------
- * Login redirect filter to ensure redirect_to parameter is respected
- * - Prefers the requested redirect_to value when present
- * - Prevents other plugins from overriding the intended destination after login
- * ------------------------------------------------------------------ */
-
-if ( ! function_exists( 'tr199x_login_redirect_to_requested_page' ) ) {
+ 
+// Ensure WordPress honors an explicit redirect_to (prevents plugins from overriding it)
+if ( ! function_exists( 'tr199x_login_redirect_prefer_requested' ) ) {
     /**
-     * Ensure users are redirected to the originally requested page after login.
-     * This filter runs after authentication and prefers the redirect_to parameter
-     * over the default dashboard redirect.
-     *
-     * @param string $redirect_to URL to redirect to after login.
-     * @param string $request Requested redirect destination.
-     * @param WP_User|WP_Error $user The user object or error.
-     * @return string The redirect URL.
+     * Prefer the requested redirect_to when present after a successful login.
      */
-    function tr199x_login_redirect_to_requested_page( $redirect_to, $request, $user ) {
-        // Only process for successful logins
-        if ( is_wp_error( $user ) ) {
-            return $redirect_to;
-        }
-        
-        // Prefer the requested redirect_to value when present
-        if ( ! empty( $request ) && wp_validate_redirect( $request ) ) {
-            return $request;
-        }
-        
-        return $redirect_to;
+    function tr199x_login_redirect_prefer_requested( $redirect_to, $requested, $user ) {
+        return ! empty( $requested ) ? $requested : $redirect_to;
     }
-    add_filter( 'login_redirect', 'tr199x_login_redirect_to_requested_page', 10, 3 );
+    add_filter( 'login_redirect', 'tr199x_login_redirect_prefer_requested', 10, 3 );
 }
-
+ 
 /* End of functions.php */
