@@ -12,7 +12,7 @@
  */
 
 if ( ! defined('TR199X_VERSION') ) {
-    define('TR199X_VERSION', '0.3.7');
+    define('TR199X_VERSION', '1.0.0');
 }
 
 if ( file_exists( get_template_directory() . '/inc/login-branding.php' ) ) {
