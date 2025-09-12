@@ -894,3 +894,13 @@ code, pre, .tr-mono,
 .tr-nav-toggle[aria-expanded="true"] .tr-hamburger::after  { transform: translateY(-8px) rotate(-45deg); }
 
 /* End Additional CSS migration */
+/* Title/Tagline vertical stack inside the flanking image row */
+.tr-title-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Strong ordering so overlay cannot cover title/tagline */
+.tr-header::before { z-index: 0 !important; }
+.tr-title, .tr-title a, .tr-tagline { position: relative; z-index: 2 !important; }
