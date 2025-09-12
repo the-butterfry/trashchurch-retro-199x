@@ -140,6 +140,13 @@ body.pixelated-bg {
   color:transparent;
 }
 .tr-title a { text-decoration:none; color:inherit; }
+.tr-tagline {
+  margin:6px 0 0;
+  font-size: 14px;
+  font-family: var(--tr-mono);
+  color: var(--tr-accent-2);
+  letter-spacing:1px;
+}
 
 /* NAV */
 .tr-nav-toggle {
@@ -711,6 +718,13 @@ table.retro-table td {
 }
 
 /* === Header UI cleanup: distinct font vars === */
+.tr-title,
+.tr-title a {
+  font-family: var(--tr-header-font) !important;
+}
+.tr-tagline {
+  font-family: var(--tr-tagline-font, var(--tr-header-font)) !important;
+}
 
 .tr-title {
   text-align: center;
@@ -749,8 +763,20 @@ body:not(.page-template-page-teamup-calendar) .tr-teamup.tr-pipe-frame {
 /* === Additional CSS migration: header/title wrap, fonts, hamburger === */
 
 /* Neutralize any @font-face named "Comic Sans MS" by mapping it to a safe local font */
+@font-face {
+  font-family: "Comic Sans MS";
+  src: local("Arial");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
 
 /* Defensive site-wide stack (loaded last). Then immediately restore known mono/header uses. */
+*,
+*::before,
+*::after {
+  font-family: var(--tr-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
+}
 
 /* Restore areas that must stay monospace or custom */
 code, pre, .tr-mono,
@@ -759,6 +785,12 @@ code, pre, .tr-mono,
 }
 
 /* Respect the header font variable if present (from header-fonts module) */
+.tr-title, .tr-title a {
+  font-family: var(--tr-header-font, var(--tr-font)) !important;
+}
+.tr-tagline {
+  font-family: var(--tr-tagline-font, var(--tr-header-font, var(--tr-font))) !important;
+}
 
 /* Ensure header overlay sits behind text so tagline is visible */
 .tr-header { position: relative; }
@@ -776,8 +808,28 @@ code, pre, .tr-mono,
 }
 
 /* Keep existing visual treatment on the title (gradient clip etc.) */
+.tr-title-wrap .tr-title {
+  margin: 0;
+  display: inline-block;
+}
 
 /* Images flanking the title (inline, not absolutely positioned) */
+.tr-title-img {
+  display: block;
+  width: clamp(48px, 8vw, 120px);
+  height: auto;
+  max-height: 18vh;
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+  user-select: none;
+  transform: translateY(0);
+  transition: transform .18s ease;
+  box-shadow: 0 0 10px rgba(0,0,0,0.55);
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.04);
+  background: rgba(0,0,0,0.25);
+}
 
 /* small hover "bounce" for desktop */
 @media (hover: hover) and (pointer: fine) {
@@ -860,8 +912,20 @@ code, pre, .tr-mono,
 }
 /* === Additional CSS migration (final overrides) === */
 /* 1) Neutralize any @font-face named "Comic Sans MS" */
+@font-face {
+  font-family: "Comic Sans MS";
+  src: local("Arial");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
 
 /* 2) Defensive site-wide stack (then immediately restore known mono/header uses) */
+*,
+*::before,
+*::after {
+  font-family: var(--tr-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
+}
 
 /* Restore areas that must stay monospace or custom */
 code, pre, .tr-mono,
@@ -870,12 +934,34 @@ code, pre, .tr-mono,
 }
 
 /* Respect the header font variable if present (from header-fonts module) */
+.tr-title, .tr-title a {
+  font-family: var(--tr-header-font, var(--tr-font)) !important;
+}
+.tr-tagline {
+  font-family: var(--tr-tagline-font, var(--tr-header-font, var(--tr-font))) !important;
+}
 
 /* 3) Title/tagline alignment: tagline to bottom-right of title, drop 5px */
+.tr-title-stack {
+  /* Override earlier column stack so title and tagline sit on one line */
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;     /* bottom-align the tagline to the title */
+  justify-content: center;   /* preserve centered group within the header */
+  gap: 10px;
+}
 
 .tr-title {
   display: inline-block;
   vertical-align: bottom;
+}
+
+.tr-tagline {
+  margin: 0 0 0 10px;        /* space to the right of the title */
+  text-align: right;
+  white-space: nowrap;
+  transform: translateY(5px);/* drop by 5px */
+  opacity: 0.95;             /* matches existing style */
 }
 
 /* Small screens: stack and center again */
@@ -930,7 +1016,12 @@ code, pre, .tr-mono,
 .tr-nav-toggle[aria-expanded="true"] .tr-hamburger::before { transform: translateY(8px) rotate(45deg); }
 .tr-nav-toggle[aria-expanded="true"] .tr-hamburger::after  { transform: translateY(-8px) rotate(-45deg); }
 /* Header logo images: remove all decorative framing for full transparency */
-
+.tr-title-img {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
 /* Tagline stacked under the title, indented 10px to the right */
 .tr-title-stack {
   display: flex !important;
@@ -951,69 +1042,56 @@ code, pre, .tr-mono,
   white-space: normal;             /* allow wrapping as needed */
 }
 /* Header logo images: remove all decorative framing for full transparency */
+.tr-title-img {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
 
 /* Keep title/tagline stacked; left-align the stack; indent tagline 10px */
-
+.tr-title-wrap .tr-title-stack {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important; /* left-align within centered wrap */
+  justify-content: center;
+  gap: 6px;
+}
+.tr-title-wrap .tr-title {
+  text-align: left !important;
+}
+.tr-title-wrap .tr-tagline {
+  margin: 0 0 0 10px !important;  /* 10px to the right of the title */
+  text-align: left !important;
+  transform: none !important;      /* no vertical offset when stacked */
+  white-space: normal;             /* wrap naturally */
+}
 /* --- Header: keep stacked, center title; indent tagline by 10px --- */
-
-/* Tagline sits under title, nudged 10px to the right */
-
-/* Ensure header logo images are fully transparent (no frame) */
-
-/* BEGIN AUTO-CLEAN HEADER BLOCK */
-
-/* === Header cleanup (consolidated) === */
-
-/* Header fonts (single source of truth) */
-.tr-title,
-.tr-title a {
-  font-family: var(--tr-header-font, var(--tr-font));
-}
-.tr-tagline {
-  font-family: var(--tr-tagline-font, var(--tr-header-font, var(--tr-font)));
-}
-
-/* Images flanking the title (frameless) */
-.tr-title-img {
-  display: block;
-  width: clamp(48px, 8vw, 120px);
-  height: auto;
-  max-height: 18vh;
-  object-fit: contain;
-  image-rendering: pixelated;
-  pointer-events: none;
-  user-select: none;
-  transform: translateY(0);
-  transition: transform .18s ease;
-
-  /* frameless */
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-/* Title/Tagline vertical stack (centered) */
-.tr-title-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.tr-title-wrap .tr-title-stack {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important; /* keep the title centered */
   justify-content: center;
   gap: 6px;
 }
 
-/* Title centered */
-.tr-title {
-  text-align: center;
+.tr-title-wrap .tr-title {
+  text-align: center !important;
   margin: 0;
 }
 
-/* Tagline under the title, shifted 10px to the right */
-.tr-tagline {
-  margin: 0 0 0 10px;
-  text-align: center;
-  transform: none;
+/* Tagline sits under title, nudged 10px to the right */
+.tr-title-wrap .tr-tagline {
+  display: inline-block;
+  margin: 0;
+  transform: translateX(10px) !important;
   white-space: normal;
 }
 
-/* END AUTO-CLEAN HEADER BLOCK */
+/* Ensure header logo images are fully transparent (no frame) */
+.tr-title-img {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
