@@ -414,7 +414,7 @@ add_action( 'pre_get_posts', function( WP_Query $q ) {
     foreach ( array( 'cat', 'category__in', 'category__and', 'category_name' ) as $k ) {
         if ( isset( $q->query_vars[ $k ] ) ) unset( $q->query_vars[ $k ] );
     }
-}, 10000 );
+}, 1.5.0 );
 
 /**
  * On the Member Services template, force post queries to include BOTH categories (OR).
