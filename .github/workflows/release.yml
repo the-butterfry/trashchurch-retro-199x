@@ -11,9 +11,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create ZIP from theme folder
+      - name: Create ZIP from theme folder (excluding scripts/, assets/, tools/, push-to-main.sh, clean_style_css.py, *.bak)
         run: |
-          zip -r "trashchurch-retro-199x-${{ github.event.release.tag_name }}.zip" trashchurch-retro-199x
+          zip -r "trashchurch-retro-199x-${{ github.event.release.tag_name }}.zip" trashchurch-retro-199x \
+              -x "trashchurch-retro-199x/scripts/*" \
+              -x "trashchurch-retro-199x/assets/*" \
+              -x "trashchurch-retro-199x/push-to-main.sh" \
+              -x "trashchurch-retro-199x/clean_style_css.py" \
+              -x "trashchurch-retro-199x/tools/*" \
+              -x "trashchurch-retro-199x/*.bak" \
+              -x "trashchurch-retro-199x/*/*.bak" \
+              -x "trashchurch-retro-199x/*/*/*.bak"
 
       - name: Upload ZIP to release
         uses: softprops/action-gh-release@v2
