@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 # push-to-main.sh
 # Interactive script to bump version, update README and changed files, commit and push.
-# On push rejection it will automatically fetch+rebase origin/main and retry the push.
+# Now supports:
+#   - Push to origin/dev
+#   - Merge dev -> main and push main
+#   - Push directly to main (original behavior)
+# On push rejection it will automatically fetch+rebase onto the remote branch and retry.
 set -euo pipefail
 
-# Helpers
+# -------- Config (override with env vars if needed) --------
+DEV_BRANCH="${DEV_BRANCH:-dev}"
+MAIN_BRANCH="${MAIN_BRANCH:-main}"
+
+# -------- Helpers --------
 err() { echo "ERROR: $*" >&2; exit 1; }
 info() { echo "INFO: $*"; }
 prompt_yes_no() {
@@ -27,7 +35,7 @@ fi
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT"
 
-# Detect uncommitted/untracked changes
+# -------- Detect uncommitted/untracked changes --------
 git_status_porcelain=$(git status --porcelain)
 if [[ -n "$git_status_porcelain" ]]; then
   echo "There are uncommitted changes in the working tree:"
@@ -64,7 +72,7 @@ if [[ -n "$git_status_porcelain" ]]; then
   fi
 fi
 
-# Try to determine current version
+# -------- Version discovery helpers --------
 get_version_from_package_json() {
   if [[ -f package.json ]]; then
     ver=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' package.json || true)
@@ -95,6 +103,7 @@ get_version_from_tags() {
   return 1
 }
 
+# -------- Determine current version --------
 current_version=""
 current_version=$(get_version_from_tags || true)
 if [[ -z "$current_version" ]]; then
@@ -119,7 +128,7 @@ fi
 
 info "Current version detected: $current_version"
 
-# Ask how to bump
+# -------- Ask how to bump --------
 echo "Select how you want to increment the version:"
 echo "  1) patch  (x.y.(z+1))"
 echo "  2) minor  (x.(y+1).0)"
@@ -156,7 +165,7 @@ case "$choice" in
     new_version="${base}-${suffix}"
     ;;
   5)
-    read -rp "Enter the exact version you want (example 1.2.3): " custom
+    read -rp "Enter the exact version you want (example 1.5.0): " custom
     if [[ -z "$custom" ]]; then
       err "No version provided."
     fi
@@ -173,14 +182,14 @@ if [[ "${confirm,,}" != "y" ]]; then
   err "Aborted by user."
 fi
 
-# Find changed files relative to origin/main (if available) or relative to main branch
+# -------- Compute files changed vs remote --------
 changed_files=""
-git fetch origin main --quiet 2>/dev/null || true
-if git rev-parse --verify --quiet origin/main >/dev/null; then
-  changed_files=$(git diff --name-only origin/main...HEAD)
+git fetch origin "$MAIN_BRANCH" --quiet 2>/dev/null || true
+if git rev-parse --verify --quiet "origin/$MAIN_BRANCH" >/dev/null; then
+  changed_files=$(git diff --name-only "origin/$MAIN_BRANCH"...HEAD)
 else
-  if git rev-parse --verify --quiet main >/dev/null; then
-    changed_files=$(git diff --name-only main...HEAD)
+  if git rev-parse --verify --quiet "$MAIN_BRANCH" >/dev/null; then
+    changed_files=$(git diff --name-only "$MAIN_BRANCH"...HEAD)
   else
     changed_files=$(git status --porcelain | awk '{print $2}' | tr '\n' ' ')
   fi
@@ -198,7 +207,7 @@ else
   echo "$files_to_scan" | sed 's/^/  - /'
 fi
 
-# Function to replace version in file (attempt safe in-place edit)
+# -------- In-file version replacement helpers --------
 replace_version_in_file() {
   local file="$1"
   local cur="$2"
@@ -213,14 +222,12 @@ replace_version_in_file() {
   return 1
 }
 
-# Also update package.json/composer.json/VERSION explicitly if present
 update_special_files() {
   local cur="$1"
   local new="$2"
   local updated=()
 
   if [[ -f package.json ]]; then
-    # check if package.json contains a "version" field
     if grep -q "\"version\"[[:space:]]*:[[:space:]]*\"" package.json; then
       sed -E -i.bak "s/\"version\"[[:space:]]*:[[:space:]]*\"[^\"]+\"/\"version\": \"${new}\"/" package.json
       rm -f package.json.bak
@@ -229,7 +236,6 @@ update_special_files() {
   fi
 
   if [[ -f composer.json ]]; then
-    # check if composer.json contains a "version" field
     if grep -q "\"version\"[[:space:]]*:[[:space:]]*\"" composer.json; then
       sed -E -i.bak "s/\"version\"[[:space:]]*:[[:space:]]*\"[^\"]+\"/\"version\": \"${new}\"/" composer.json
       rm -f composer.json.bak
@@ -247,7 +253,7 @@ update_special_files() {
   fi
 }
 
-# Update files
+# -------- Update files with new version --------
 updated_files=()
 if [[ -n "$files_to_scan" ]]; then
   while IFS= read -r f; do
@@ -259,7 +265,6 @@ if [[ -n "$files_to_scan" ]]; then
   done <<< "$files_to_scan"
 fi
 
-# Update package.json/composer.json/VERSION if present even if not changed files
 while IFS= read -r f; do
   [[ -z "$f" ]] && continue
   updated_files+=("$f")
@@ -274,17 +279,7 @@ else
   info "No files contained the current version string; no in-file replacements made."
 fi
 
-# If README files exist, scan for occurrences of the old version and update if needed
-if [[ -z "${updated_files[*]-}" && -n "$readme_files" ]]; then
-  info "Attempting to update README files for version mentions."
-  for r in $readme_files; do
-    if replace_version_in_file "$r" "$current_version" "$new_version"; then
-      updated_files+=("$r")
-    fi
-  done
-fi
-
-# Stage changes
+# -------- Stage and commit the bump --------
 if (( ${#updated_files[@]} )); then
   git add "${updated_files[@]}"
   info "Staged version updates."
@@ -292,7 +287,6 @@ else
   info "No file updates to stage."
 fi
 
-# Commit
 read -rp "Enter commit message for the version bump (default: \"chore(release): bump version to $new_version\"): " commit_msg
 commit_msg=${commit_msg:-"chore(release): bump version to ${new_version}"}
 
@@ -303,81 +297,183 @@ else
   info "Committed: $commit_msg"
 fi
 
-# Optionally create annotated tag
-if prompt_yes_no "Create an annotated git tag for ${new_version}? (y/N)" "N"; then
-  tag_prefix=""
-  latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
-  if [[ "$latest_tag" =~ ^v[0-9] ]]; then
-    tag_prefix="v"
-  fi
-  git tag -a "${tag_prefix}${new_version}" -m "Release ${new_version}"
-  info "Created tag ${tag_prefix}${new_version}"
-fi
+# -------- Git helpers for pushing and merging --------
+ensure_remote_branch_exists() {
+  local branch="$1"
+  git fetch origin "$branch" --quiet 2>/dev/null || true
+  git rev-parse --verify --quiet "origin/$branch" >/dev/null
+}
 
-# Function: automatically fetch+rebase origin/main and retry push on rejection
-auto_rebase_and_push_main() {
-  info "Attempting automatic fetch + rebase of origin/main onto current branch..."
-  # fetch origin main (best effort)
-  git fetch origin main || true
-
-  # ensure origin/main exists
-  if ! git rev-parse --verify --quiet origin/main >/dev/null; then
-    info "origin/main not found; cannot rebase. Aborting automatic rebase."
-    return 1
-  fi
-
-  # attempt rebase local commits on top of origin/main
-  if git rebase origin/main; then
-    info "Rebase successful; retrying push to origin/main..."
-    if git push origin "HEAD:main"; then
-      info "Push successful after rebase."
-      return 0
+switch_to_branch_tracking_remote() {
+  local branch="$1"
+  if git rev-parse --verify --quiet "$branch" >/dev/null; then
+    git switch "$branch"
+  else
+    if ensure_remote_branch_exists "$branch"; then
+      git switch -c "$branch" --track "origin/$branch"
     else
+      # Create from current HEAD if remote does not exist
+      git switch -c "$branch"
+    fi
+  fi
+}
+
+push_with_autorebase() {
+  local target_branch="$1"
+  info "Pushing HEAD to origin/${target_branch}..."
+  if git push origin "HEAD:${target_branch}"; then
+    info "Push to origin/${target_branch} succeeded."
+    return 0
+  fi
+  info "Push rejected. Attempting automatic fetch + rebase onto origin/${target_branch}..."
+  git fetch origin "${target_branch}" || true
+  if git rev-parse --verify --quiet "origin/${target_branch}" >/dev/null; then
+    if git rebase "origin/${target_branch}"; then
+      info "Rebase successful; retrying push..."
+      git push origin "HEAD:${target_branch}" && { info "Push successful after rebase."; return 0; }
       info "Push still failed after rebase."
+      return 1
+    else
+      echo "Rebase failed. Resolve conflicts manually and retry."
+      echo "To abort rebase: git rebase --abort"
       return 1
     fi
   else
-    echo "Rebase failed. You must resolve conflicts manually."
-    echo "To abort rebase and restore previous state run: git rebase --abort"
+    info "Remote origin/${target_branch} not found; retrying push without rebase..."
+    git push origin "HEAD:${target_branch}"
+  fi
+}
+
+merge_remote_into_main_and_push() {
+  local remote_source_ref="$1"   # e.g., origin/dev
+  local main_branch="$2"         # e.g., main
+  local merge_msg="$3"           # merge commit message
+
+  info "Preparing to merge ${remote_source_ref} into ${main_branch}..."
+
+  git fetch origin "$main_branch" || true
+  git fetch origin "${remote_source_ref#origin/}" || true
+
+  # Ensure local main is present and up to date
+  if git rev-parse --verify --quiet "$main_branch" >/dev/null; then
+    git switch "$main_branch"
+    if git rev-parse --verify --quiet "origin/$main_branch" >/dev/null; then
+      git rebase "origin/$main_branch" || {
+        echo "Rebase of $main_branch onto origin/$main_branch failed. Resolve and re-run."
+        return 1
+      }
+    fi
+  else
+    if git rev-parse --verify --quiet "origin/$main_branch" >/dev/null; then
+      git switch -c "$main_branch" --track "origin/$main_branch"
+    else
+      err "Neither local nor remote '$main_branch' exists. Cannot proceed."
+    fi
+  fi
+
+  # Merge the remote-tracking source into main (creates a merge commit)
+  if git merge --no-ff "$remote_source_ref" -m "$merge_msg"; then
+    info "Merge successful."
+  else
+    echo "Merge failed due to conflicts. Resolve them, commit, then push manually."
+    return 1
+  fi
+
+  # Push main
+  info "Pushing ${main_branch} to origin/${main_branch}..."
+  if git push origin "$main_branch"; then
+    info "Pushed ${main_branch}."
+    return 0
+  else
+    info "Push of ${main_branch} failed."
     return 1
   fi
 }
 
-# Push
-current_branch=$(git rev-parse --abbrev-ref HEAD)
-echo "You are on branch: $current_branch"
-if prompt_yes_no "Push to origin/main (will push HEAD to main)? (y/N)" "N"; then
-  # Try normal push first
-  if git push origin "HEAD:main"; then
-    info "Pushed HEAD to origin/main"
-    # push tags if any
-    if git tag --list | grep -q -E "^(v)?${new_version}$"; then
-      git push origin --tags || true
-      info "Pushed tags"
-    fi
-  else
-    info "Push was rejected (non-fast-forward). Will automatically attempt fetch+rebase and retry."
-    if auto_rebase_and_push_main; then
-      # push tags if any
-      if git tag --list | grep -q -E "^(v)?${new_version}$"; then
-        git push origin --tags || true
-        info "Pushed tags"
-      fi
-    else
-      err "Automatic rebase/push failed. Resolve the issue manually (rebase conflicts or remote state) and retry."
-    fi
+create_and_push_tag_here() {
+  local version="$1"
+  local prefix=""
+  # preserve 'v' prefix if repository has existing v-prefixed tags
+  latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
+  if [[ "$latest_tag" =~ ^v[0-9] ]]; then
+    prefix="v"
   fi
-else
-  if prompt_yes_no "Push to origin/$current_branch instead? (y/N)" "N"; then
-    git push origin "$current_branch"
-    info "Pushed origin/$current_branch"
-    if git tag --list | grep -q -E "^(v)?${new_version}$"; then
-      git push origin --tags || true
-      info "Pushed tags"
-    fi
+  local tag="${prefix}${version}"
+  if git rev-parse --verify --quiet "refs/tags/${tag}" >/dev/null; then
+    info "Tag ${tag} already exists locally; skipping create."
   else
-    info "Skipping push. Local repo updated and committed. Remember to push when ready."
+    git tag -a "${tag}" -m "Release ${version}"
+    info "Created tag ${tag} at $(git rev-parse --short HEAD)"
   fi
-fi
+  git push origin --tags || true
+  info "Pushed tags."
+}
 
-info "Done. New version: $new_version"
+# -------- Choose workflow --------
+echo
+echo "Select release workflow:"
+echo "  1) Push HEAD to origin/${DEV_BRANCH}"
+echo "  2) Merge ${DEV_BRANCH} -> ${MAIN_BRANCH} and push ${MAIN_BRANCH} (will first push HEAD to origin/${DEV_BRANCH})"
+echo "  3) Push HEAD directly to origin/${MAIN_BRANCH} (original behavior)"
+echo "  4) Push HEAD to origin/(current branch)"
+read -rp "Choice [2]: " wf
+wf="${wf:-2}"
+
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+case "$wf" in
+  1)
+    # Push to dev only
+    if push_with_autorebase "$DEV_BRANCH"; then
+      if prompt_yes_no "Create annotated tag ${new_version} on current HEAD (dev flow)? (y/N)" "N"; then
+        create_and_push_tag_here "$new_version"
+      fi
+      info "Done. Pushed to origin/${DEV_BRANCH}. New version: ${new_version}"
+    else
+      err "Push to origin/${DEV_BRANCH} failed."
+    fi
+    ;;
+  2)
+    # Release via dev -> main
+    info "Step 1/2: Push HEAD to origin/${DEV_BRANCH} (so main merges the latest dev state)..."
+    push_with_autorebase "$DEV_BRANCH"
+
+    info "Step 2/2: Merge origin/${DEV_BRANCH} into ${MAIN_BRANCH} and push ${MAIN_BRANCH}..."
+    merge_msg="Merge ${DEV_BRANCH} into ${MAIN_BRANCH}: release ${new_version}"
+    if merge_remote_into_main_and_push "origin/${DEV_BRANCH}" "$MAIN_BRANCH" "$merge_msg"; then
+      if prompt_yes_no "Create annotated tag ${new_version} on ${MAIN_BRANCH} HEAD? (y/N)" "N"; then
+        # We are currently on main (merge_remote_into_main_and_push switches)
+        create_and_push_tag_here "$new_version"
+      fi
+      info "Done. ${DEV_BRANCH} merged into ${MAIN_BRANCH}. New version: ${new_version}"
+    else
+      err "Merge or push of ${MAIN_BRANCH} failed. Resolve and re-run."
+    fi
+    ;;
+  3)
+    # Direct push to main (existing behavior generalized)
+    if push_with_autorebase "$MAIN_BRANCH"; then
+      if prompt_yes_no "Create annotated tag ${new_version} on ${MAIN_BRANCH} HEAD? (y/N)" "N"; then
+        create_and_push_tag_here "$new_version"
+      fi
+      info "Done. Pushed HEAD to origin/${MAIN_BRANCH}. New version: ${new_version}"
+    else
+      err "Push to origin/${MAIN_BRANCH} failed."
+    fi
+    ;;
+  4)
+    # Push to current branch
+    if push_with_autorebase "$current_branch"; then
+      if prompt_yes_no "Create annotated tag ${new_version} on current HEAD? (y/N)" "N"; then
+        create_and_push_tag_here "$new_version"
+      fi
+      info "Done. Pushed HEAD to origin/${current_branch}. New version: ${new_version}"
+    else
+      err "Push to origin/${current_branch} failed."
+    fi
+    ;;
+  *)
+    err "Invalid workflow choice."
+    ;;
+esac
+
+info "All done."
