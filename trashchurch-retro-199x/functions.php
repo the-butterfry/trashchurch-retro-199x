@@ -1,7 +1,7 @@
 <?php
 /**
  * TrashChurch Retro 199X Functions
- * Version 0.3.7
+ * Version 1.5.0
  *
  * Integrated:
  * - Optional Customizer include for selecting restricted pages (inc/customizer-restricted-pages.php)
@@ -12,7 +12,8 @@
  */
 
 if ( ! defined('TR199X_VERSION') ) {
-    define('TR199X_VERSION', '1.0.0');
+    // Align constant with header version comment
+    define('TR199X_VERSION', '1.5.0');
 }
 
 if ( file_exists( get_template_directory() . '/inc/login-branding.php' ) ) {
@@ -73,18 +74,28 @@ function tr199x_scripts() {
 
         $count  = max(1, min(40, (int) get_theme_mod('tr199x_comet_count', 10)));
         $smooth = max(0.05, min(0.9, (float) get_theme_mod('tr199x_comet_smooth', 0.25)));
-        $img    = esc_url( get_theme_mod('tr199x_comet_image', get_template_directory_uri().'/assets/img/comet.png') );
+        // Default to new "user" comet image, but fall back to legacy single image setting
+        $default_user_img = get_template_directory_uri() . '/assets/img/comet.png';
+        $img_user   = esc_url( get_theme_mod('tr199x_comet_image_user', get_theme_mod('tr199x_comet_image', $default_user_img)) );
+        $img_member = esc_url( get_theme_mod('tr199x_comet_image_member', get_template_directory_uri().'/assets/img/comet-member.gif' ) );
         $fade   = (bool) get_theme_mod('tr199x_comet_fade', true);
 
         // Pass whether coarse pointers should be allowed based on the Customizer toggle
         $allow_coarse = ! get_theme_mod('tr199x_disable_mobile_comet', true);
 
+        // Set size to 40px universally as requested
+        $size_px = 40;
+
+        // Provide both user/member images plus a resolved "image" for backward compatibility
         wp_localize_script('tr199x-comet','TR199X_COMET', array(
-            'count'       => $count,
-            'smooth'      => $smooth,
-            'image'       => $img,
-            'fade'        => $fade,
-            'allowCoarse' => $allow_coarse,
+            'count'        => $count,
+            'smooth'       => $smooth,
+            'image'        => is_user_logged_in() ? $img_member : $img_user, // legacy consumers
+            'imageUser'    => $img_user,
+            'imageMember'  => $img_member,
+            'size'         => $size_px,
+            'fade'         => $fade,
+            'allowCoarse'  => $allow_coarse,
         ));
     }
 
@@ -108,6 +119,24 @@ function tr199x_scripts() {
 }
 add_action('wp_enqueue_scripts','tr199x_scripts');
 
+/**
+ * Enqueue Footer and Teamup styles
+ * - Footer styles moved out of Additional CSS into assets/css/footer.css
+ * - Keep a separate enqueue for Teamup styles
+ */
+function tr_enqueue_footer_styles() {
+    $uri  = get_template_directory_uri() . '/assets/css/footer.css';
+    $path = get_template_directory() . '/assets/css/footer.css';
+    $ver  = file_exists($path) ? filemtime($path) : TR199X_VERSION; // cache-bust on change
+    wp_enqueue_style( 'tr-footer', $uri, array('tr199x-style'), $ver );
+}
+add_action( 'wp_enqueue_scripts', 'tr_enqueue_footer_styles', 20 );
+
+function tr_enqueue_teamup_styles() {
+  wp_enqueue_style( 'tr-teamup', get_template_directory_uri() . '/assets/css/teamup.css', array(), '1.0' );
+}
+add_action( 'wp_enqueue_scripts', 'tr_enqueue_teamup_styles' );
+
 function tr199x_body_classes( $classes ) {
     if ( get_theme_mod('tr199x_disable_tile', false) ) $classes[] = 'tr-no-tile';
     if ( get_theme_mod('tr199x_pixel_bg', false) ) $classes[] = 'pixelated-bg';
@@ -126,8 +155,8 @@ add_filter('excerpt_more','tr199x_excerpt_more');
 
 function tr199x_allow_marquee( $tags ) {
     $tags['marquee'] = array(
-        'behavior'=>true,'direction'=>true,'scrollamount'=>true,'scrolldelay'=>true,
-        'width'=>true,'height'=>true,'loop'=>true
+        'behavior'=>true,'direction'=>true,'scrollamount'=>true,'scrolldelay'=>true
+        ,'width'=>true,'height'=>true,'loop'=>true
     );
     $tags['blink'] = array();
     return $tags;
@@ -215,19 +244,37 @@ function tr199x_customize($wp) {
         'section'=>'tr199x_retro'
     ));
 
-    $wp->add_setting('tr199x_comet_image', array(
+    // New: Separate images for logged-out ("User") and logged-in ("Member")
+    $wp->add_setting('tr199x_comet_image_user', array(
         'default'=> get_template_directory_uri().'/assets/img/comet.png',
         'sanitize_callback'=>'esc_url_raw'
     ));
     $wp->add_control(new WP_Customize_Image_Control(
         $wp,
-        'tr199x_comet_image',
+        'tr199x_comet_image_user',
         array(
-            'label'=>__('Comet Image (32x32 transparent PNG)','trashchurch-retro-199x'),
+            'label'=>__('User Comet Image (40x40 transparent PNG/GIF)','trashchurch-retro-199x'),
             'section'=>'tr199x_retro',
-            'settings'=>'tr199x_comet_image'
+            'settings'=>'tr199x_comet_image_user'
         )
     ));
+
+    $wp->add_setting('tr199x_comet_image_member', array(
+        'default'=> get_template_directory_uri().'/assets/img/comet-member.gif',
+        'sanitize_callback'=>'esc_url_raw'
+    ));
+    $wp->add_control(new WP_Customize_Image_Control(
+        $wp,
+        'tr199x_comet_image_member',
+        array(
+            'label'=>__('Member Comet Image (40x40 transparent PNG/GIF)','trashchurch-retro-199x'),
+            'section'=>'tr199x_retro',
+            'settings'=>'tr199x_comet_image_member'
+        )
+    ));
+
+    // Legacy single-image setting kept as silent fallback (no control displayed now)
+    // $wp->add_setting('tr199x_comet_image', ... ) — still read in code if user image not set.
 
     $wp->add_setting('tr199x_comet_count', array(
         'default'=>10,
@@ -437,10 +484,29 @@ if ( file_exists( get_template_directory() . '/inc/teamup-calendar.php' ) ) {
     require_once get_template_directory() . '/inc/teamup-calendar.php';
 }
 
-function tr_enqueue_teamup_styles() {
-  wp_enqueue_style( 'tr-teamup', get_template_directory_uri() . '/assets/css/teamup.css', array(), '1.0' );
+/* Optional modular function includes (safe, guarded) */
+if ( file_exists( get_template_directory() . '/functions/header-functions.php' ) ) {
+    require_once get_template_directory() . '/functions/header-functions.php';
 }
-add_action( 'wp_enqueue_scripts', 'tr_enqueue_teamup_styles' );
+if ( file_exists( get_template_directory() . '/functions/member-functions.php' ) ) {
+    require_once get_template_directory() . '/functions/member-functions.php';
+}
+if ( file_exists( get_template_directory() . '/functions/templates-compat.php' ) ) {
+    require_once get_template_directory() . '/functions/templates-compat.php';
+}
+if ( file_exists( get_template_directory() . '/functions/content-visibility.php' ) ) {
+    require_once get_template_directory() . '/functions/content-visibility.php';
+}
+if ( file_exists( get_template_directory() . '/functions/page-tiles.php' ) ) {
+    require_once get_template_directory() . '/functions/page-tiles.php';
+}
+
+/* New: Optional footer helpers (menus, customizer bits, egg JS).
+ * Only loads if you've added functions/footer-functions.php
+ */
+if ( file_exists( get_template_directory() . '/functions/footer-functions.php' ) ) {
+    require_once get_template_directory() . '/functions/footer-functions.php';
+}
 
 /* ------------------------------------------------------------------
  * Restricted pages support + redirect logic
