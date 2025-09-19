@@ -199,3 +199,39 @@
   /* If your Member Services button sits in a .tr-footer-cta wrapper, center it */
   .tr-footer-cta { display: flex; justify-content: center; }
 }
+/* ===== Footer (TC 199X) — frame, inner padding, and outer gap ===== */
+
+/* ...your existing footer styles remain, then append this at the end: */
+
+/* Footer Badges 2x2 grid (max 4 badges) */
+.tr-footer-extras-col .tr-badges-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 88px);
+  grid-template-rows: repeat(2, 31px);
+  gap: 10px;
+  max-width: 196px;
+  margin-bottom: 8px;
+}
+.tr-footer-extras-col .tr-gif {
+  width: 88px;
+  height: 31px;
+  display: block;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  image-rendering: pixelated;
+  overflow: hidden;
+}
+.tr-footer-extras-col .tr-gif img {
+  width: 88px;
+  height: 31px;
+  display: block;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+@media (max-width: 800px) {
+  .tr-footer-extras-col .tr-badges-grid {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

@@ -1,7 +1,8 @@
 <?php
 /**
  * Footer helpers (menus, customizer, Konami egg).
- * Note: Retro hit counter is provided by your existing code (tr199x_hit_counter etc).
+ * Random badge mode: pick 4 random badge images from /assets/badges/,
+ * assigns random links from the textarea in Customizer.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
@@ -14,13 +15,13 @@ add_action( 'after_setup_theme', function() {
     ) );
 }, 7 );
 
-/* Customizer: Footer GIFs (Guestbook + Netscape 88×31) and toggle */
+/* Customizer: Footer badge links textarea */
 add_action( 'customize_register', function( WP_Customize_Manager $wp_customize ) {
     $section_id = 'tr199x_footer_extras';
     $wp_customize->add_section( $section_id, array(
         'title'       => __( 'Footer Extras (199x GIFs)', 'trashchurch-retro-199x' ),
         'priority'    => 165,
-        'description' => __( 'Configure Guestbook and Netscape badges used in the footer.', 'trashchurch-retro-199x' ),
+        'description' => __( 'Upload badge images to /assets/badges/ in your theme folder. Paste a list of links below (one per line). On each page load, 4 badges and links will be randomly paired.', 'trashchurch-retro-199x' ),
     ) );
 
     $wp_customize->add_setting( 'tr199x_show_badges', array(
@@ -32,35 +33,29 @@ add_action( 'customize_register', function( WP_Customize_Manager $wp_customize )
     $wp_customize->add_control( 'tr199x_show_badges', array(
         'type'    => 'checkbox',
         'section' => $section_id,
-        'label'   => __( 'Show footer 199x badges (Guestbook + Netscape)', 'trashchurch-retro-199x' ),
+        'label'   => __( 'Show footer 199x badges', 'trashchurch-retro-199x' ),
     ) );
 
-    $wp_customize->add_setting( 'tr199x_footer_gif_guestbook', array(
+    $wp_customize->add_setting( 'tr199x_footer_badge_links', array(
         'type'              => 'theme_mod',
-        'sanitize_callback' => 'esc_url_raw',
-        'transport'         => 'refresh',
+        'sanitize_callback' => function( $input ) {
+            // Clean up, remove empty lines, sanitize URLs
+            $lines = array_filter( array_map( 'trim', explode( "\n", $input ) ) );
+            $safe = array_map( 'esc_url_raw', $lines );
+            return implode("\n", $safe);
+        },
         'default'           => '',
-    ) );
-    $wp_customize->add_control( new WP_Customize_Image_Control( $wp_customize, 'tr199x_footer_gif_guestbook', array(
-        'label'       => __( 'Guestbook GIF (88×31)', 'trashchurch-retro-199x' ),
-        'section'     => $section_id,
-        'settings'    => 'tr199x_footer_gif_guestbook',
-    ) ) );
-
-    $wp_customize->add_setting( 'tr199x_footer_gif_netscape', array(
-        'type'              => 'theme_mod',
-        'sanitize_callback' => 'esc_url_raw',
         'transport'         => 'refresh',
-        'default'           => '',
     ) );
-    $wp_customize->add_control( new WP_Customize_Image_Control( $wp_customize, 'tr199x_footer_gif_netscape', array(
-        'label'       => __( 'Netscape GIF (88×31)', 'trashchurch-retro-199x' ),
+    $wp_customize->add_control( 'tr199x_footer_badge_links', array(
+        'type'        => 'textarea',
         'section'     => $section_id,
-        'settings'    => 'tr199x_footer_gif_netscape',
-    ) ) );
+        'settings'    => 'tr199x_footer_badge_links',
+        'label'       => __( 'Badge Links (one per line, will be randomly paired with images)', 'trashchurch-retro-199x' ),
+    ) );
 } );
 
-/* Konami Code easter egg: toggles body.egg-on and reveals .tr-egg-reveal */
+/* Konami Code egg unchanged—keep your existing JavaScript section */
 add_action( 'wp_enqueue_scripts', function() {
     $js = <<<JS
 (function() {
