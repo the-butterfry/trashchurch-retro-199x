@@ -1,0 +1,166 @@
+/* Login styles matched to the theme's .tr-panel (page.php)
+   Updated: set .wp-core-ui .button-primary background to #ff00ff (login button)
+   Expects CSS variables injected by inc/login-branding.php:
+     body.login { --tr-login-logo: url('...'); --tr-login-logo-w: 250px; --tr-login-logo-h: 250px; }
+*/
+
+body.login {
+  background: var(--tr-bg) url('../img/tile.gif') repeat fixed;
+  color: var(--tr-accent-2);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+body.login #login {
+  max-width: 520px;
+  margin: 48px auto;
+  padding: 0;
+  position: relative;
+}
+
+body.login form {
+  position: relative;
+  z-index: 2;
+  background: #0b0020; /* same as .tr-panel */
+  border: 4px ridge var(--tr-border);
+  border-radius: 18px;
+  padding: 30px 30px 40px;
+  box-shadow: 0 0 25px #000, inset 0 0 25px #000, 0 0 22px var(--tr-border-alt);
+  color: var(--tr-accent-2);
+  overflow: visible;
+}
+
+body.login h1 {
+  margin: 0 0 16px;
+  text-align: center;
+}
+body.login h1 a {
+  display: block;
+  width: var(--tr-login-logo-w, 250px);
+  height: var(--tr-login-logo-h, 100px);
+  margin: 0 auto 8px;
+  background-image: var(--tr-login-logo);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  text-indent: -9999px;
+  overflow: hidden;
+  border-radius: calc(var(--tr-radius) - 2px);
+  box-shadow: 0 0 14px var(--tr-border-alt), 0 0 22px var(--tr-border);
+}
+
+/* Labels and inputs */
+body.login label {
+  display:block;
+  color: var(--tr-accent-2);
+  font-family: var(--tr-mono);
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+/* Make the labels for Username, Password and Remember-me white */
+body.login label[for="user_login"],
+body.login label[for="user_pass"],
+body.login label[for="rememberme"] {
+  color: #ffffff;
+}
+
+/* Inputs default to dark panel style.
+   General case: white text on dark background.
+   The two main fields (#user_login, #user_pass) are overridden below to use a white background and dark text. */
+body.login .input,
+body.login input[type="text"],
+body.login input[type="password"] {
+  width: 100%;
+  background: #050020;
+  border: 2px solid var(--tr-border-alt);
+  color: #ffffff;                    /* typed text color: white (general case) */
+  padding: 10px 12px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 10px #000;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+
+/* Default placeholders on dark inputs */
+body.login input[type="text"]::placeholder,
+body.login input[type="password"]::placeholder,
+body.login #user_login::placeholder,
+body.login #user_pass::placeholder {
+  color: rgba(255,255,255,0.75);
+}
+
+/* Enforce white background and dark text for the Username and Password fields */
+body.login #user_login,
+body.login #user_pass {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border-color: var(--tr-border-alt) !important;
+}
+
+/* Override placeholders for the white-background fields so they remain readable */
+body.login #user_login::placeholder,
+body.login #user_pass::placeholder {
+  color: rgba(0,0,0,0.55);
+}
+
+/* Messages (logout, errors) — readable against the panel background */
+body.login p.message,
+body.login .message,
+body.login .message p,
+body.login .message.updated,
+body.login .message.error {
+  color: var(--tr-accent-2);
+  background: transparent;
+  margin-bottom: 12px;
+}
+body.login p.message a,
+body.login .message a {
+  color: var(--tr-accent-2);
+  text-decoration: underline;
+}
+
+/* ===== BUTTON TREATMENT =====
+   Only set the background to #ff00ff per request.
+   This replaces the previous blue (#2271b1) rule in the login stylesheet.
+   No other button properties are changed here so other defaults remain intact.
+*/
+body.login .wp-core-ui .button-primary {
+  background: #ff00ff;
+}
+
+/* Nav/back links */
+body.login #nav a,
+body.login #backtoblog a {
+  color: var(--tr-accent-2);
+}
+body.login #nav a:hover,
+body.login #backtoblog a:hover {
+  color: var(--tr-border);
+}
+
+/* Accessibility focus for inputs (keeps visible focus rings for keyboard users) */
+body.login input:focus {
+  outline: 3px dashed var(--tr-accent-2);
+  outline-offset: 3px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  body.login #login {
+    margin: 28px 12px;
+    max-width: 360px;
+  }
+  body.login form {
+    padding: 22px;
+    border-radius: 14px;
+  }
+  body.login h1 a {
+    width: calc(var(--tr-login-logo-w,250px) * 0.6);
+    height: calc(var(--tr-login-logo-h,100px) * 0.6);
+  }
+  body.login .wp-core-ui .button-primary,
+  body.login input#wp-submit {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}

@@ -1,0 +1,556 @@
+/**
+ * Prayer List Classifieds - Newspaper Style (Dark, Responsive, Dynamic 3-across)
+ * Patched: UI clean-up, spacing, borders, modal button position per latest requests
+ */
+
+.prayer-list-classifieds {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.2em;
+  background: #0b0020;
+  border: 2.5px solid #1a1a1a;
+  font-family: 'Courier New', Courier, monospace;
+  min-height: 50vh;
+  padding: 1.1em;
+  box-sizing: border-box;
+}
+
+.prayer-tile {
+  color: #fff;
+  background: #17103b;
+  border: 2.5px solid #fff902;
+  border-radius: 0;
+  min-height: 110px;
+  padding: 0.9em 1em 0.7em 1em;
+  position: relative;
+  cursor: pointer;
+  transition: border 0.2s, background 0.2s;
+  box-shadow: none;
+  outline: none;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: center;
+}
+
+.prayer-tile:nth-child(4n+1) { background: #120833; }
+.prayer-tile:nth-child(4n+2) { background: #190c45; }
+.prayer-tile:nth-child(4n+3) { background: #1d1452; }
+.prayer-tile:nth-child(4n)   { background: #22195c; }
+
+.prayer-tile:nth-child(5n+1) { border-color: #fff902; }
+.prayer-tile:nth-child(5n+2) { border-color: #ff15e9; }
+.prayer-tile:nth-child(5n+3) { border-color: #b2fc3d; }
+.prayer-tile:nth-child(5n+4) { border-color: #00ffff; }
+.prayer-tile:nth-child(5n)   { border-color: #ffa558; }
+
+.prayer-tile:focus, .prayer-tile:hover {
+  border-style: double;
+  background: #22195c;
+}
+
+/* Centered image in tile */
+.prayer-tile-img {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  margin-bottom: 0.1em;
+}
+.prayer-tile-img img, .prayer-thumb {
+  width: 62px;
+  height: 62px;
+  object-fit: cover;
+  border: 1.5px solid #fff;
+  background: #1d1452;
+  float: none;
+  margin: 0 auto 0.12em auto;
+  display: block;
+}
+
+.prayer-head-bold,
+.prayer-head-italics,
+.prayer-head-bold-italics,
+.prayer-head-highlight {
+  display: block;
+  text-align: center;
+  margin: 0.5em 0 0.9em 0;
+  font-size: 1.09em;
+  letter-spacing: 0.04em;
+}
+.prayer-head-bold         { font-weight: bold; text-transform: uppercase; color: #fff; }
+.prayer-head-italics      { font-style: italic; text-transform: uppercase; color: #d7caf7; }
+.prayer-head-bold-italics { font-weight: bold; font-style: italic; text-transform: uppercase; color: #fffae2; }
+.prayer-head-highlight    { background: #fff8; color: #0b0020; font-weight: bold; text-transform: uppercase; border-radius: 2px; padding: 0.12em 0.5em; }
+
+.prayer-meta-block {
+  margin-top: 0.2em; /* PATCH: Add more space above REQUEST: for separation */
+  margin-bottom: 0.18em !important;
+  font-size: 0.98em;
+  letter-spacing: 0.01em;
+}
+.prayer-meta-block div {
+  margin-bottom: 0.07em !important;
+  color: #fff;
+  line-height: 1.25;
+}
+.prayer-meta-block strong {
+  display: inline-block;
+  font-weight: bold;
+  font-size: 1em;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: 0.3em;
+}
+
+.prayer-tag {
+  white-space: nowrap;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(30,30,30,0.2);
+  border: 1px solid #ccc;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #fff;
+  margin-right: 0.45em;
+}
+
+.prayer-tag.prayer-status-answered {
+  background: #888;
+  color: #fff;
+  border-color: #888;
+}
+.prayer-tag.prayer-status-unanswered {
+  background: #222;
+  color: #fff;
+  border-color: #666;
+}
+
+.prayer-status-Unanswered {
+  background: #1a0d37;
+  color: #fff;
+  border-color: #fff;
+}
+
+.prayer-status-Answered\! {
+  background: #22195c;
+  color: #eee;
+  border-color: #fff;
+  opacity: 0.7;
+  text-decoration: none !important; /* PATCH: Remove strikethrough from status label */
+}
+
+.prayer-assignment {
+  background: #1d1452;
+  color: #fff;
+  border-color: #fff;
+}
+
+.prayer-tile-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  align-items: center;
+  margin-bottom: 1.2em; /* PATCH: More space under status/assignment line */
+}
+
+.prayer-tile.prayer-Answered\! {
+  opacity: 0.6;
+  background: #333 !important;
+  box-shadow: none;
+  border: none !important; /* PATCH: Remove dotted/dashed border for answered prayers */
+}
+
+.prayer-tile.prayer-Answered\! .prayer-head-bold,
+.prayer-tile.prayer-Answered\! .prayer-head-italics,
+.prayer-tile.prayer-Answered\! .prayer-head-bold-italics,
+.prayer-tile.prayer-Answered\! .prayer-head-highlight,
+.prayer-tile.prayer-Answered\! .prayer-meta-block {
+  text-decoration: none !important;
+  border-style: solid !important;
+  color: #bbb !important;
+}
+
+.prayer-tile.prayer-Answered\! .prayer-tile-header {
+  margin-bottom: 1.2em; /* PATCH: Keep spacing consistent for answered prayers */
+}
+
+/* MODAL Overlay */
+.prayer-modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0; top: 0; width: 100vw; height: 100vh;
+  background: rgba(11,0,32,0.88);
+  overflow-y: auto;
+}
+
+/* MODAL POPUP Card */
+.prayer-modal-content {
+  background: #120833;
+  color: #fff;
+  margin: 4vh auto;
+  padding: 2.2em 2.5em;
+  border: none;
+  border-radius: 0;
+  width: 98vw;
+  max-width: 520px;
+  box-shadow: 0 0 32px #000b, 0 0 0px #fff;
+  position: relative;
+  font-family: 'Courier New', Courier, monospace;
+  overflow-y: auto;
+  max-height: 88vh;
+  word-break: break-word;
+  white-space: pre-wrap;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 700px) {
+  .prayer-modal-content {
+    padding: 1.2em 0.2em;
+    max-width: 99vw;
+    max-height: 80vh;
+  }
+}
+
+.prayer-modal-fields {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0 !important;
+  color: #fff;
+  border-radius: 0;
+  font-size: 0.95em;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.prayer-modal-fields > * {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.prayer-modal-fields div,
+.prayer-modal-fields label {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1.01 !important;
+}
+.prayer-modal-fields strong {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-weight: bold;
+}
+.prayer-modal-fields label {
+  display: block;
+  font-weight: bold;
+  color: #fff;
+  text-transform: uppercase;
+  font-size: 0.95em;
+  letter-spacing: 0.05em;
+}
+.prayer-modal-fields select,
+.prayer-modal-fields input,
+.prayer-modal-fields textarea {
+  margin: 0 !important;
+}
+.prayer-modal-fields .prayer-meta-block {
+  margin: 0 !important;
+}
+.prayer-modal-fields .prayer-meta-block div {
+  margin: 0 !important;
+}
+.prayer-modal-fields select,
+.prayer-modal-fields textarea,
+.prayer-modal-fields input[type="text"],
+.prayer-modal-fields input[type="email"] {
+  font-family: inherit;
+  font-size: 0.98em;
+  padding: 0.005em 0.03em;
+  margin: 0 !important;
+  border: 1px solid #bbb;
+  border-radius: 0;
+  width: 100%;
+  box-sizing: border-box;
+  background: #1a0d37;
+  color: #fff;
+}
+
+/* ==== PATCHED MODAL ACTIONS ==== */
+.prayer-modal-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2em;
+  margin-top: 1.2em;
+  margin-bottom: 0.1em;
+}
+
+.prayer-modal-fields-row {
+  display: flex;
+  flex-direction: row;
+  gap: 2em;
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 0.6em;
+}
+
+.prayer-modal-fields-row label {
+  color: #fff;
+  font-family: inherit;
+  font-size: 1em;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0;
+}
+
+.prayer-modal-buttons-row {
+  display: flex;
+  flex-direction: row;
+  gap: 2em;
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 0.1em;
+}
+
+.prayer-modal-buttons-row button,
+.prayer-modal-buttons-row #prayer-delete-btn {
+  min-width: 120px;
+  width: 180px;
+  max-width: 90vw;
+  padding: 0.5em 0;
+  font-weight: bold;
+  font-family: inherit;
+  font-size: 1.04em;
+  border-radius: 16px;
+  border: 3px solid;
+  cursor: pointer;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s;
+  display: block;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Update button style */
+.prayer-modal-buttons-row button[type="submit"] {
+  background: #fff902;
+  color: #191919;
+  border-color: #ff15e9;
+  box-shadow: 0 0 12px #00fff7, 0 0 2px #ff15e9;
+}
+.prayer-modal-buttons-row button[type="submit"]:hover,
+.prayer-modal-buttons-row button[type="submit"]:focus {
+  background: #00fff7;
+  color: #191919;
+  border-color: #ff15e9;
+  box-shadow: 0 0 18px #ff15e9, 0 0 4px #00fff7;
+  outline: none;
+}
+
+/* Delete button style */
+.prayer-modal-buttons-row #prayer-delete-btn {
+  background: #e36e6e;
+  color: #fff;
+  border-color: #a71e1e;
+  box-shadow: 0 0 12px #e36e6e, 0 0 2px #a71e1e;
+  position: static !important;
+}
+.prayer-modal-buttons-row #prayer-delete-btn:hover,
+.prayer-modal-buttons-row #prayer-delete-btn:focus {
+  background: #a71e1e;
+  color: #fff;
+  border-color: #ff4444;
+  box-shadow: 0 0 18px #ff4444, 0 0 4px #e36e6e;
+  outline: none;
+}
+/* ==== END PATCHED MODAL ACTIONS ==== */
+
+#prayer-request-form {
+  max-width: 420px;
+  margin: 3em auto 1.7em auto;
+  background: #17103b;
+  border: 2.5px solid #fff902;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 1em;
+  font-family: 'Courier New', Courier, monospace;
+  color: #fff;
+  padding: 2.1em 1.4em 1.1em 1.4em;
+  transition: border-color 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#prayer-request-form label {
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 0.4em;
+  display: block;
+  text-transform: none;
+  letter-spacing: 0.03em;
+  width: 100%;
+  text-align: left;
+}
+#prayer-request-form input[type="text"],
+#prayer-request-form textarea,
+#prayer-request-form select,
+#prayer-request-form input[type="email"] {
+  font-family: inherit;
+  font-size: 1em;
+  width: 100%;
+  padding: 0.23em 0.4em;
+  margin-bottom: 0.7em;
+  border: 2px solid #fff902;
+  border-radius: 0;
+  background: #1a0d37;
+  color: #fff;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+#prayer-request-form input[type="text"]:focus,
+#prayer-request-form textarea:focus,
+#prayer-request-form select:focus,
+#prayer-request-form input[type="email"]:focus {
+  border-color: #ff15e9;
+  outline: none;
+}
+#prayer-request-form textarea {
+  min-height: 60px;
+}
+
+#prayer-request-form .prayer-file-label {
+  display: block;
+  margin: 0.7em auto 0.3em auto;
+  background: #00fff7;
+  color: #191919;
+  border: 2px solid #ff15e9;
+  border-radius: 10px;
+  padding: 0.3em 1em;
+  font-weight: bold;
+  font-family: inherit;
+  font-size: 1em;
+  cursor: pointer;
+  box-shadow: 0 0 8px #fff902, 0 0 1px #ff15e9;
+  transition: background 0.15s, color 0.15s;
+  text-align: center;
+  width: fit-content;
+}
+#prayer-request-form .prayer-file-label:hover,
+#prayer-request-form .prayer-file-label:focus {
+  background: #fff902;
+  color: #191919;
+  outline: none;
+}
+#prayer-request-form .prayer-file-chosen {
+  display: inline-block;
+  margin-left: 0.7em;
+  color: #fff902;
+  font-size: 0.95em;
+  font-family: inherit;
+}
+#prayer-request-form input[type="file"] {
+  display: none;
+}
+
+#prayer-request-form .prayer-form-submit-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-top: 2.4em;
+}
+#prayer-request-form button[type="submit"] {
+  background: #fff902;
+  color: #191919;
+  border: 3px solid #ff15e9;
+  border-radius: 16px;
+  width: 80%;
+  max-width: 300px;
+  padding: 0.6em 0;
+  font-weight: bold;
+  font-family: inherit;
+  font-size: 1.15em;
+  box-shadow: 0 0 12px #00fff7, 0 0 2px #ff15e9;
+  cursor: pointer;
+  margin-bottom: 0.5em;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s;
+  display: block;
+  text-align: center;
+}
+#prayer-request-form button[type="submit"]:hover,
+#prayer-request-form button[type="submit"]:focus {
+  background: #00fff7;
+  color: #191919;
+  border-color: #ff15e9;
+  box-shadow: 0 0 18px #ff15e9, 0 0 4px #00fff7;
+  outline: none;
+}
+@media (max-width: 700px) {
+  #prayer-request-form button[type="submit"] {
+    font-size: 1em;
+    padding: 0.55em 0;
+    max-width: 96vw;
+  }
+}
+
+.prayer-submit-success {
+  background: #fff8;
+  color: #0b0020;
+  border: 1.5px solid #fff;
+  border-radius: 0;
+  padding: 0.9em;
+  margin-top: 1em;
+  text-align: center;
+  font-size: 1.01em;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.prayer-tile:focus-visible {
+  outline: 2.5px dashed #fff;
+  outline-offset: 2px;
+}
+
+@media (max-width: 1100px) {
+  .prayer-list-classifieds {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 700px) {
+  .prayer-list-classifieds {
+    grid-template-columns: 1fr;
+    padding: 0.6em;
+  }
+  .prayer-tile {
+    margin-bottom: 0.85em;
+  }
+  .prayer-modal-content {
+    padding: 1.2em 0.45em;
+    max-width: 99vw;
+    max-height: 80vh;
+  }
+  #prayer-request-form {
+    padding: 1em 0.5em 0.8em 0.5em;
+  }
+}
+
+@media print {
+  .prayer-list-classifieds,
+  .prayer-tile,
+  .prayer-modal-content,
+  #prayer-request-form {
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    border-color: #000 !important;
+  }
+  .prayer-tile, .prayer-modal-content {
+    page-break-inside: avoid;
+  }
+}
